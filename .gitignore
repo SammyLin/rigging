@@ -1,0 +1,9 @@
+# Local agent state — not part of this repo's source
+.claude/
+.kiro/
+
+# Local backups
+*.local-backup
+
+# OS
+.DS_Store
