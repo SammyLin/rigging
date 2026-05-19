@@ -17,13 +17,11 @@ When a team starts a new project, every member's AI-agent setup differs, leading
 - `.env` accidentally pulled into context
 - Commit messages all over the place
 
-This repo codifies the team's best practices. The installer is a small CLI called **rigging** (the harness around your AI agents):
+This repo codifies the team's best practices. Install with **`rigup`** — a small CLI that rigs your project with the standards (the npm name `rigging` was taken):
 
 ```bash
-npx rigging init
+npx rigup init
 ```
-
-> The legacy `curl | bash` installer (`setup.sh`) still works for now but is deprecated. See [Install](#install) below.
 
 ## What gets installed (Claude Code)
 
@@ -77,30 +75,20 @@ CLAUDE.md                     ← main file (short, @imports rules)
 
 ```bash
 # Claude Code (auto-detects project language)
-npx rigging init
+npx rigup init
 
 # Kiro CLI
-npx rigging init --target kiro
+npx rigup init --target kiro
 
 # Both
-npx rigging init --target all
+npx rigup init --target all
 
 # Refresh after a new rigging release
-npx rigging upgrade --target all
+npx rigup upgrade --target all
 
 # Remove (preserves user-edited files)
-npx rigging uninstall
+npx rigup uninstall
 ```
-
-### Legacy installer (deprecated)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash
-curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --kiro
-curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --all
-```
-
-The bash installer (`setup.sh`) still works but is being phased out. It also produces incorrect Kiro CLI output for some fields (see `docs/exec-plans/active/v2-cli-rewrite.md` D6) — `npx rigging init` is the supported path.
 
 ### Language auto-detection
 
@@ -173,7 +161,7 @@ Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 ## Update
 
 ```bash
-npx rigging upgrade --target all
+npx rigup upgrade --target all
 ```
 
 ## Knowledge Base (`docs/`)

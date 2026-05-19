@@ -1,10 +1,10 @@
 {
-  "name": "rigging",
-  "version": "0.0.0",
+  "name": "rigup",
+  "version": "0.1.0",
   "description": "Rig your project with team AI-coding standards — installer for Claude Code, Kiro, and AGENTS.md-compatible tools.",
   "type": "module",
   "bin": {
-    "rigging": "./dist/index.js"
+    "rigup": "./dist/index.js"
   },
   "files": [
     "dist",

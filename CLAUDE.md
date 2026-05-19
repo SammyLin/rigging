@@ -16,7 +16,7 @@ rules/                       → .claude/rules/
   lang-go.md                 — auto-detected by go.mod
   lang-frontend.md           — auto-detected by .tsx / vite.config / React
 
-skills/                      → .claude/skills/<name>/SKILL.md (wrapped by setup.sh)
+skills/                      → .claude/skills/<name>/SKILL.md (wrapped by the installer)
   security.md                → security-check
   project-ops.md             → infra-ops
   harness-engineering.md     → harness-review
@@ -34,7 +34,7 @@ hooks/                       → .claude/hooks/
   secret-guard.sh            — PreToolUse Bash
 
 settings.json                → .claude/settings.json
-setup.sh                     — Installer (language detection, Kiro format conversion)
+cli/                         — Installer source (TypeScript). Published to npm as `rigup`.
 docs/                        — Knowledge base (not installed to target projects)
 ```
 
@@ -50,19 +50,19 @@ docs/                        — Knowledge base (not installed to target project
 
 ## Kiro CLI Mapping
 
-Kiro CLI's format doesn't fully overlap with Claude Code. `setup.sh` handles the conversions automatically:
+Kiro CLI's format doesn't fully overlap with Claude Code. The `rigup` CLI handles the conversions automatically (logic lives in `cli/src/kiro-convert.ts`):
 
-| Claude Code | Kiro CLI | What setup.sh does |
+| Claude Code | Kiro CLI | What `rigup` does |
 |-------------|----------|--------------------|
-| `paths:` YAML array | `inclusion: fileMatch` + `fileMatchPattern: "a\|b\|c"` | Auto-converts |
+| `paths:` YAML array | `inclusion: fileMatch` + `fileMatchPattern: ["a", "b", "c"]` | Auto-converts |
 | Agent markdown | Agent JSON | Parses frontmatter + body, emits JSON |
 | Commands / Hooks / settings.json | — | ❌ Not supported by Kiro CLI — skipped |
 
 ## Editing Principles
 
 - **Core rules**: keep concise, high value density. These are ALWAYS in context.
-- **Language rules**: self-contained per language. Scoped by `paths:`. Detection logic lives in `setup.sh::detect_languages()`.
-- **Situational rules**: source files (security.md etc.) are wrapped into SKILL.md with frontmatter by setup.sh.
+- **Language rules**: self-contained per language. Scoped by `paths:`. Detection logic lives in `cli/src/detect.ts`.
+- **Situational rules**: source files (security.md etc.) are wrapped into SKILL.md with frontmatter by `cli/src/claude-format.ts`.
 - **Skill description** (~250 chars) is the trigger — phrase it the way a user would naturally ask.
 - **Agent + Commands**: **restraint principle** — only one agent + two commands, mapping to Verify + Commit in the 5-step flow. More than that is a "persona zoo."
 - **Hooks**: only ship the two language-agnostic, low-risk ones (auto-format, secret-guard).
@@ -70,15 +70,18 @@ Kiro CLI's format doesn't fully overlap with Claude Code. `setup.sh` handles the
 
 ## Adding a New Item
 
+All installer wiring lives in `cli/src/manifest.ts`. Add an entry there, plus detection logic in `cli/src/detect.ts` for new languages.
+
 ### Adding a Skill
 
 1. Write the source file `skills/foo.md`.
-2. Add to `setup.sh` arrays: `SKILL_NAMES` / `SKILL_SOURCES` / `SKILL_DESCRIPTIONS`.
+2. Append a `SkillManifestEntry` to `SKILLS` in `cli/src/manifest.ts` (`name`, `source`, `description`).
 
 ### Adding a Language
 
 1. Write `rules/lang-xxx.md` with a `paths:` frontmatter at the top.
-2. Add to `setup.sh` arrays: `LANG_FILES` / `LANG_DETECT` / `LANG_LABELS` / `LANG_DESCRIPTIONS` / `LANG_KIRO_PATTERN`.
+2. Append a `LangManifestEntry` to `LANG_MANIFEST` in `cli/src/manifest.ts` (`language`, `file`, `label`, `kiroPattern`).
+3. Add the detection rule for it in `cli/src/detect.ts` (e.g. which files trigger it).
 
 ### Adding an Agent / Command / Hook
 
@@ -87,26 +90,28 @@ Kiro CLI's format doesn't fully overlap with Claude Code. `setup.sh` handles the
 If truly needed:
 
 1. Place the file under `agents/` / `commands/` / `hooks/`.
-2. Add to `setup.sh` arrays: `AGENT_FILES` / `COMMAND_FILES` / `HOOK_FILES`.
+2. Add the path to `AGENT_FILES` / `COMMAND_FILES` / `HOOK_FILES` in `cli/src/manifest.ts`.
 
 ## Testing
 
 ```bash
-# Start a local HTTP server that serves this repo
-python3 -m http.server 8765 --bind 127.0.0.1 &
+# Unit tests + lint inside cli/
+cd cli && pnpm install && pnpm test && pnpm lint
 
-# Simulate a Go project in a temp dir
+# Smoke-test the installer against a temp project
 mkdir -p /tmp/test && cd /tmp/test && touch go.mod
-BASE_URL=http://127.0.0.1:8765 bash <(curl -s http://127.0.0.1:8765/setup.sh)
+cd -
+cd cli && pnpm dev -- init --dry-run --target all
+# (drop --dry-run to actually write files into /tmp/test)
 
 # Inspect the result
 find /tmp/test -type f | sort
 ```
 
-`setup.sh` honors a `BASE_URL` environment variable override for local testing.
+`pnpm dev` runs the CLI from source via tsx. `pnpm build` compiles to `dist/`, then `node dist/index.js init` runs the built artifact. See `cli/README.md` for the full dev/publish flow.
 
 ## Language Policy
 
-- **AI-facing files** (rules, skills, agents, commands, hooks, this CLAUDE.md, `setup.sh` output) are written in **English**.
+- **AI-facing files** (rules, skills, agents, commands, hooks, this CLAUDE.md, installer output) are written in **English**.
 - **Human-facing docs** (README, `docs/`) may be bilingual. The primary README is English; `README.zh-TW.md` is the Traditional Chinese mirror.
 - **When editing README, update both `README.md` and `README.zh-TW.md`** — they must stay in sync.

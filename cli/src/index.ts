@@ -4,7 +4,7 @@ import { runInit } from './commands/init.js';
 import { runUpgrade } from './commands/upgrade.js';
 import { runUninstall } from './commands/uninstall.js';
 
-const cli = cac('rigging');
+const cli = cac('rigup');
 
 cli
   .command('init', 'Install rigging standards into the current project')
@@ -26,6 +26,6 @@ cli
   .action(runUninstall);
 
 cli.help();
-cli.version('0.0.0');
+cli.version('0.1.0');
 
 cli.parse();

@@ -17,13 +17,11 @@
 - `.env` 會被不小心讀進 context
 - commit message 各寫各的
 
-這個 repo 把團隊的最佳實踐固化成**一條指令就能裝起來**的標準配置。安裝器叫 **rigging**（裝在 AI agent 周圍的支撐結構）：
+這個 repo 把團隊的最佳實踐固化成**一條指令就能裝起來**的標準配置。安裝指令是 **`rigup`**（npm 上 `rigging` 名字被搶了，所以套件用 `rigup`，rigging 仍是這個專案的名字）：
 
 ```bash
-npx rigging init
+npx rigup init
 ```
-
-> 舊的 `curl | bash` 安裝器（`setup.sh`）暫時還能跑但已棄用。詳見下方 [安裝](#安裝)。
 
 ## 裝了什麼？（Claude Code）
 
@@ -77,30 +75,20 @@ CLAUDE.md                     ← 主檔（短，用 @import 引入規則）
 
 ```bash
 # Claude Code（自動偵測專案語言）
-npx rigging init
+npx rigup init
 
 # Kiro CLI
-npx rigging init --target kiro
+npx rigup init --target kiro
 
 # 兩個都裝
-npx rigging init --target all
+npx rigup init --target all
 
 # rigging 釋出新版後刷新
-npx rigging upgrade --target all
+npx rigup upgrade --target all
 
 # 移除（保留 user 自編輯的檔案）
-npx rigging uninstall
+npx rigup uninstall
 ```
-
-### 舊版 bash 安裝器（已棄用）
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash
-curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --kiro
-curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --all
-```
-
-`setup.sh` 還能跑但正逐步淘汰。它的 Kiro 輸出有部分欄位是錯的（詳見 `docs/exec-plans/active/v2-cli-rewrite.md` D6）—— `npx rigging init` 是支援中的路徑。
 
 ### 語言自動偵測
 
@@ -173,7 +161,7 @@ Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
 ## 更新
 
 ```bash
-npx rigging upgrade --target all
+npx rigup upgrade --target all
 ```
 
 ## 知識庫 (`docs/`)

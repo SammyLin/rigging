@@ -1,16 +1,16 @@
-# rigging
+# rigup
 
-Node CLI that installs team AI-coding standards into a project — Claude Code, Kiro CLI, or AGENTS.md-compatible tools. Replaces the legacy `setup.sh`. See `docs/exec-plans/active/v2-cli-rewrite.md` for the design.
+Node CLI that installs team AI-coding standards into a project — Claude Code, Kiro CLI, or AGENTS.md-compatible tools. Published on npm as `rigup` (the name `rigging` was taken). See `docs/exec-plans/active/v2-cli-rewrite.md` for the design.
 
 ## Public usage
 
 ```bash
-npx rigging init                  # auto-detect language, install Claude Code config
-npx rigging init --target kiro    # install Kiro CLI config
-npx rigging init --target all     # both
+npx rigup init                  # auto-detect language, install Claude Code config
+npx rigup init --target kiro    # install Kiro CLI config
+npx rigup init --target all     # both
 
-npx rigging upgrade --target all  # refresh after a new release
-npx rigging uninstall             # remove rigging-managed files (keeps user files)
+npx rigup upgrade --target all  # refresh after a new release
+npx rigup uninstall             # remove rigup-managed files (keeps user files)
 ```
 
 ## Dev
@@ -28,7 +28,7 @@ pnpm lint                      # eslint + prettier --check
 ## Publish
 
 ```bash
-pnpm pack                      # produce rigging-*.tgz (prepack copies sources, postpack cleans up)
+pnpm pack                      # produce rigup-*.tgz (prepack copies sources, postpack cleans up)
 pnpm publish                   # to npm (only after verifying the tarball)
 ```
 
@@ -39,5 +39,5 @@ pnpm publish                   # to npm (only after verifying the tarball)
 ```bash
 pnpm build
 pnpm link --global
-rigging --help
+rigup --help
 ```
