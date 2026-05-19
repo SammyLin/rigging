@@ -1,7 +1,8 @@
 {
   "name": "coderigup",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Rig your project with team AI-coding standards — installer for Claude Code, Kiro, and AGENTS.md-compatible tools.",
+  "license": "MIT",
   "type": "module",
   "bin": {
     "coderigup": "./dist/index.js"
