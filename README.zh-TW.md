@@ -17,10 +17,10 @@
 - `.env` 會被不小心讀進 context
 - commit message 各寫各的
 
-這個 repo 把團隊的最佳實踐固化成**一條指令就能裝起來**的標準配置。安裝指令是 **`rigup`**（npm 上 `rigging` 名字被搶了，所以套件用 `rigup`，rigging 仍是這個專案的名字）：
+這個 repo 把團隊的最佳實踐固化成**一條指令就能裝起來**的標準配置。安裝指令是 **`coderigup`**（npm 上 `rigging` 名字被搶了，所以套件用 `coderigup`，rigging 仍是這個專案的名字）：
 
 ```bash
-npx rigup init
+npx coderigup init
 ```
 
 ## 裝了什麼？（Claude Code）
@@ -75,19 +75,19 @@ CLAUDE.md                     ← 主檔（短，用 @import 引入規則）
 
 ```bash
 # Claude Code（自動偵測專案語言）
-npx rigup init
+npx coderigup init
 
 # Kiro CLI
-npx rigup init --target kiro
+npx coderigup init --target kiro
 
 # 兩個都裝
-npx rigup init --target all
+npx coderigup init --target all
 
 # rigging 釋出新版後刷新
-npx rigup upgrade --target all
+npx coderigup upgrade --target all
 
 # 移除（保留 user 自編輯的檔案）
-npx rigup uninstall
+npx coderigup uninstall
 ```
 
 ### 語言自動偵測
@@ -161,7 +161,7 @@ Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
 ## 更新
 
 ```bash
-npx rigup upgrade --target all
+npx coderigup upgrade --target all
 ```
 
 ## 知識庫 (`docs/`)

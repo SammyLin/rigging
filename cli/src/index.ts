@@ -4,7 +4,7 @@ import { runInit } from './commands/init.js';
 import { runUpgrade } from './commands/upgrade.js';
 import { runUninstall } from './commands/uninstall.js';
 
-const cli = cac('rigup');
+const cli = cac('coderigup');
 
 cli
   .command('init', 'Install rigging standards into the current project')

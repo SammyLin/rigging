@@ -22,7 +22,7 @@ export function parseTarget(raw: string | undefined): Target | undefined {
 // (next to dist/), otherwise fall back to the dev layout one more level up.
 export function resolveSourceRoot(): string {
   const here = fileURLToPath(import.meta.url);
-  const packageRoot = join(dirname(here), '..'); // .../cli or .../node_modules/rigup
+  const packageRoot = join(dirname(here), '..'); // .../cli or .../node_modules/coderigup
   if (existsSync(join(packageRoot, 'rules'))) return packageRoot;
   return join(packageRoot, '..');
 }

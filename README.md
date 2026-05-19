@@ -17,10 +17,10 @@ When a team starts a new project, every member's AI-agent setup differs, leading
 - `.env` accidentally pulled into context
 - Commit messages all over the place
 
-This repo codifies the team's best practices. Install with **`rigup`** — a small CLI that rigs your project with the standards (the npm name `rigging` was taken):
+This repo codifies the team's best practices. Install with **`coderigup`** — a small CLI that rigs your project with the standards (the bare name `rigging` was taken on npm):
 
 ```bash
-npx rigup init
+npx coderigup init
 ```
 
 ## What gets installed (Claude Code)
@@ -75,19 +75,19 @@ CLAUDE.md                     ← main file (short, @imports rules)
 
 ```bash
 # Claude Code (auto-detects project language)
-npx rigup init
+npx coderigup init
 
 # Kiro CLI
-npx rigup init --target kiro
+npx coderigup init --target kiro
 
 # Both
-npx rigup init --target all
+npx coderigup init --target all
 
 # Refresh after a new rigging release
-npx rigup upgrade --target all
+npx coderigup upgrade --target all
 
 # Remove (preserves user-edited files)
-npx rigup uninstall
+npx coderigup uninstall
 ```
 
 ### Language auto-detection
@@ -161,7 +161,7 @@ Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 ## Update
 
 ```bash
-npx rigup upgrade --target all
+npx coderigup upgrade --target all
 ```
 
 ## Knowledge Base (`docs/`)

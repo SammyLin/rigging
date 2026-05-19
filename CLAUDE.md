@@ -34,7 +34,7 @@ hooks/                       → .claude/hooks/
   secret-guard.sh            — PreToolUse Bash
 
 settings.json                → .claude/settings.json
-cli/                         — Installer source (TypeScript). Published to npm as `rigup`.
+cli/                         — Installer source (TypeScript). Published to npm as `coderigup`.
 docs/                        — Knowledge base (not installed to target projects)
 ```
 
@@ -50,9 +50,9 @@ docs/                        — Knowledge base (not installed to target project
 
 ## Kiro CLI Mapping
 
-Kiro CLI's format doesn't fully overlap with Claude Code. The `rigup` CLI handles the conversions automatically (logic lives in `cli/src/kiro-convert.ts`):
+Kiro CLI's format doesn't fully overlap with Claude Code. The `coderigup` CLI handles the conversions automatically (logic lives in `cli/src/kiro-convert.ts`):
 
-| Claude Code | Kiro CLI | What `rigup` does |
+| Claude Code | Kiro CLI | What `coderigup` does |
 |-------------|----------|--------------------|
 | `paths:` YAML array | `inclusion: fileMatch` + `fileMatchPattern: ["a", "b", "c"]` | Auto-converts |
 | Agent markdown | Agent JSON | Parses frontmatter + body, emits JSON |
