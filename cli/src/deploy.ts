@@ -1,12 +1,14 @@
 import {
   chmodSync,
   copyFileSync,
+  cpSync,
   existsSync,
   lstatSync,
   mkdirSync,
   readFileSync,
   readlinkSync,
   rmdirSync,
+  rmSync,
   symlinkSync,
   unlinkSync,
   writeFileSync,
@@ -22,6 +24,7 @@ import {
   HOOK_FILES,
   LANG_MANIFEST,
   SKILLS,
+  VENDORED_SKILLS,
 } from './manifest.js';
 
 const DEFAULT_SOURCE = 'https://github.com/SammyLin/rigging';
@@ -80,6 +83,10 @@ export function deployClaude(options: DeployOptions): void {
     writeTo(join(claudeDir, 'skills', skill.name, 'SKILL.md'), wrapped);
     log(`  ✓ ${skill.name}/`);
   }
+  for (const skill of VENDORED_SKILLS) {
+    copyDir(join(sourceRoot, 'skills', skill.dir), join(claudeDir, 'skills', skill.name));
+    log(`  ✓ ${skill.name}/ (vendored)`);
+  }
 
   log('Layer 4 — Agents + Commands:');
   for (const f of [...AGENT_FILES, ...COMMAND_FILES]) {
@@ -117,7 +124,9 @@ export function buildRiggingSection(
       : LANG_MANIFEST;
   const coreLines = CORE_FILES.map((f) => `- @.claude/rules/${f}`).join('\n');
   const langLines = langs.map((l) => `- @.claude/rules/${l.file}`).join('\n');
-  const skillLines = SKILLS.map((s) => `- **${s.name}**: ${s.description}`).join('\n');
+  const skillLines = [...SKILLS, ...VENDORED_SKILLS]
+    .map((s) => `- **${s.name}**: ${s.description}`)
+    .join('\n');
 
   return `${MARKER_START}
 # rigging standards
@@ -294,6 +303,10 @@ export function deployKiro(options: DeployOptions): void {
     writeTo(join(targetRoot, '.kiro/skills', skill.name, 'SKILL.md'), wrapped);
     log(`  ✓ ${skill.name}/`);
   }
+  for (const skill of VENDORED_SKILLS) {
+    copyDir(join(sourceRoot, 'skills', skill.dir), join(targetRoot, '.kiro/skills', skill.name));
+    log(`  ✓ ${skill.name}/ (vendored)`);
+  }
 
   log('Layer 4 — Agents (code-reviewer as JSON):');
   for (const f of AGENT_FILES) {
@@ -365,6 +378,9 @@ export function uninstallClaude(options: UninstallOptions): void {
     if (removeIfExists(join(skillDir, 'SKILL.md'))) log(`  ✗ skills/${skill.name}/SKILL.md`);
     tryRmdir(skillDir);
   }
+  for (const skill of VENDORED_SKILLS) {
+    if (removeDir(join(claudeDir, 'skills', skill.name))) log(`  ✗ skills/${skill.name}/`);
+  }
   for (const f of [...AGENT_FILES, ...COMMAND_FILES, ...HOOK_FILES]) {
     if (removeIfExists(join(claudeDir, f))) log(`  ✗ ${f}`);
   }
@@ -405,6 +421,9 @@ export function uninstallKiro(options: UninstallOptions): void {
     const dir = join(skillsDir, skill.name);
     if (removeIfExists(join(dir, 'SKILL.md'))) log(`  ✗ skills/${skill.name}/SKILL.md`);
     tryRmdir(dir);
+  }
+  for (const skill of VENDORED_SKILLS) {
+    if (removeDir(join(skillsDir, skill.name))) log(`  ✗ skills/${skill.name}/`);
   }
   for (const f of AGENT_FILES) {
     const jsonName = basename(f, '.md') + '.json';
@@ -471,6 +490,26 @@ function unsyncClaudeMd(claudePath: string): RemoveAction | 'symlink-removed' {
 function copyTo(src: string, dest: string): void {
   mkdirSync(dirname(dest), { recursive: true });
   copyFileSync(src, dest);
+}
+
+// Recursively copy a vendored skill directory (SKILL.md + references/, etc.)
+// verbatim into the target. Used for directory-based skills that ship their
+// own SKILL.md and bundled files, rather than the single-file wrapped skills.
+function copyDir(src: string, dest: string): void {
+  mkdirSync(dirname(dest), { recursive: true });
+  cpSync(src, dest, { recursive: true });
+}
+
+// Recursively remove a directory. Returns true if it existed, false otherwise.
+// Best-effort: any failure (missing, permission) is treated as "not removed".
+function removeDir(dirPath: string): boolean {
+  if (!pathExists(dirPath)) return false;
+  try {
+    rmSync(dirPath, { recursive: true, force: true });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function writeTo(dest: string, contents: string): void {
