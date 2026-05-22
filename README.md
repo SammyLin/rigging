@@ -17,13 +17,11 @@ When a team starts a new project, every member's AI-agent setup differs, leading
 - `.env` accidentally pulled into context
 - Commit messages all over the place
 
-This repo codifies the team's best practices. The installer is a small CLI called **rigging** (the harness around your AI agents):
+This repo codifies the team's best practices. Install with **`coderigup`** — a small CLI that rigs your project with the standards (the bare name `rigging` was taken on npm):
 
 ```bash
-npx rigging init
+npx coderigup init
 ```
-
-> The legacy `curl | bash` installer (`setup.sh`) still works for now but is deprecated. See [Install](#install) below.
 
 ## What gets installed (Claude Code)
 
@@ -38,7 +36,8 @@ npx rigging init
 │   ├── security-check/          new API, shipping, user input
 │   ├── infra-ops/               Docker, CI/CD, git workflow
 │   ├── harness-review/          systemic improvements
-│   └── browser-verify/          frontend visual verification
+│   ├── browser-verify/          frontend visual verification
+│   └── code-review-expert/      SOLID + security review of git changes
 ├── agents/
 │   └── code-reviewer.md      ← subagent: structured review of changes
 ├── commands/
@@ -77,30 +76,20 @@ CLAUDE.md                     ← main file (short, @imports rules)
 
 ```bash
 # Claude Code (auto-detects project language)
-npx rigging init
+npx coderigup init
 
 # Kiro CLI
-npx rigging init --target kiro
+npx coderigup init --target kiro
 
 # Both
-npx rigging init --target all
+npx coderigup init --target all
 
 # Refresh after a new rigging release
-npx rigging upgrade --target all
+npx coderigup upgrade --target all
 
 # Remove (preserves user-edited files)
-npx rigging uninstall
+npx coderigup uninstall
 ```
-
-### Legacy installer (deprecated)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash
-curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --kiro
-curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --all
-```
-
-The bash installer (`setup.sh`) still works but is being phased out. It also produces incorrect Kiro CLI output for some fields (see `docs/exec-plans/active/v2-cli-rewrite.md` D6) — `npx rigging init` is the supported path.
 
 ### Language auto-detection
 
@@ -147,12 +136,19 @@ Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 
 ### Skills — agent-invoked on demand
 
+<!-- skills:table:start -->
 | Skill | Source | Trigger |
 |-------|--------|---------|
 | `security-check` | [skills/security.md](skills/security.md) | adding APIs, shipping, handling user input |
 | `infra-ops` | [skills/project-ops.md](skills/project-ops.md) | Docker, CI/CD, git workflow |
 | `harness-review` | [skills/harness-engineering.md](skills/harness-engineering.md) | systemic improvements |
 | `browser-verify` | [skills/agent-browser-skill.md](skills/agent-browser-skill.md) | frontend visual verification |
+| `code-review-expert` | [skills/code-review-expert/](skills/code-review-expert/) | SOLID + security review of current git changes |
+<!-- skills:table:end -->
+
+> This table is generated from `cli/src/manifest.ts` — run `pnpm gen:docs` after changing the skill list; do not hand-edit between the markers.
+
+The first four skills are single-file sources wrapped into `SKILL.md` at install time. `code-review-expert` is a **directory-based skill** vendored verbatim (it ships its own `SKILL.md` + `references/`); see [skills/code-review-expert/ATTRIBUTION.md](skills/code-review-expert/ATTRIBUTION.md) for its upstream source.
 
 ### Agent + Commands — supporting Verify / Commit
 
@@ -173,7 +169,7 @@ Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 ## Update
 
 ```bash
-npx rigging upgrade --target all
+npx coderigup upgrade --target all
 ```
 
 ## Knowledge Base (`docs/`)

@@ -1,10 +1,11 @@
 {
-  "name": "rigging",
-  "version": "0.0.0",
+  "name": "coderigup",
+  "version": "0.2.0",
   "description": "Rig your project with team AI-coding standards — installer for Claude Code, Kiro, and AGENTS.md-compatible tools.",
+  "license": "MIT",
   "type": "module",
   "bin": {
-    "rigging": "./dist/index.js"
+    "coderigup": "./dist/index.js"
   },
   "files": [
     "dist",
@@ -24,6 +25,8 @@
     "test": "vitest run",
     "lint": "eslint . && prettier --check .",
     "lint:fix": "eslint --fix . && prettier --write .",
+    "gen:docs": "tsx scripts/gen-docs.ts",
+    "check:docs": "tsx scripts/gen-docs.ts --check",
     "copy-sources": "node scripts/copy-sources.mjs",
     "clean-sources": "node scripts/copy-sources.mjs --clean",
     "prepack": "pnpm run build && pnpm run copy-sources",

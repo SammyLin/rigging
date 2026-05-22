@@ -17,13 +17,11 @@
 - `.env` 會被不小心讀進 context
 - commit message 各寫各的
 
-這個 repo 把團隊的最佳實踐固化成**一條指令就能裝起來**的標準配置。安裝器叫 **rigging**（裝在 AI agent 周圍的支撐結構）：
+這個 repo 把團隊的最佳實踐固化成**一條指令就能裝起來**的標準配置。安裝指令是 **`coderigup`**（npm 上 `rigging` 名字被搶了，所以套件用 `coderigup`，rigging 仍是這個專案的名字）：
 
 ```bash
-npx rigging init
+npx coderigup init
 ```
-
-> 舊的 `curl | bash` 安裝器（`setup.sh`）暫時還能跑但已棄用。詳見下方 [安裝](#安裝)。
 
 ## 裝了什麼？（Claude Code）
 
@@ -38,7 +36,8 @@ npx rigging init
 │   ├── security-check/          新增 API、上線前、處理使用者輸入
 │   ├── infra-ops/               Docker、CI/CD、git workflow
 │   ├── harness-review/          系統性改進
-│   └── browser-verify/          前端視覺驗證
+│   ├── browser-verify/          前端視覺驗證
+│   └── code-review-expert/      git 變更的 SOLID + 安全審查
 ├── agents/
 │   └── code-reviewer.md      ← Subagent：結構化審查變更
 ├── commands/
@@ -77,30 +76,20 @@ CLAUDE.md                     ← 主檔（短，用 @import 引入規則）
 
 ```bash
 # Claude Code（自動偵測專案語言）
-npx rigging init
+npx coderigup init
 
 # Kiro CLI
-npx rigging init --target kiro
+npx coderigup init --target kiro
 
 # 兩個都裝
-npx rigging init --target all
+npx coderigup init --target all
 
 # rigging 釋出新版後刷新
-npx rigging upgrade --target all
+npx coderigup upgrade --target all
 
 # 移除（保留 user 自編輯的檔案）
-npx rigging uninstall
+npx coderigup uninstall
 ```
-
-### 舊版 bash 安裝器（已棄用）
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash
-curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --kiro
-curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --all
-```
-
-`setup.sh` 還能跑但正逐步淘汰。它的 Kiro 輸出有部分欄位是錯的（詳見 `docs/exec-plans/active/v2-cli-rewrite.md` D6）—— `npx rigging init` 是支援中的路徑。
 
 ### 語言自動偵測
 
@@ -147,12 +136,19 @@ Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
 
 ### Skills — Claude 按需呼叫
 
+<!-- skills:table:start -->
 | Skill | 來源 | 觸發場景 |
 |-------|------|---------|
 | `security-check` | [skills/security.md](skills/security.md) | 新增 API、上線前、處理使用者輸入 |
 | `infra-ops` | [skills/project-ops.md](skills/project-ops.md) | Docker、CI/CD、git workflow |
 | `harness-review` | [skills/harness-engineering.md](skills/harness-engineering.md) | 系統性改進 |
 | `browser-verify` | [skills/agent-browser-skill.md](skills/agent-browser-skill.md) | 前端視覺驗證 |
+| `code-review-expert` | [skills/code-review-expert/](skills/code-review-expert/) | 對當前 git 變更做 SOLID + 安全審查 |
+<!-- skills:table:end -->
+
+> 這個表格由 `cli/src/manifest.ts` 產生 —— 改動 skill 清單後請執行 `pnpm gen:docs`，不要手動編輯 markers 之間的內容。
+
+前四個 skill 是單檔來源，安裝時包成 `SKILL.md`；`code-review-expert` 是**目錄式 skill**，原樣 vendor（自帶 `SKILL.md` + `references/`），上游來源見 [skills/code-review-expert/ATTRIBUTION.md](skills/code-review-expert/ATTRIBUTION.md)。
 
 ### Agent + Commands — 支撐 Verify / Commit
 
@@ -173,7 +169,7 @@ Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
 ## 更新
 
 ```bash
-npx rigging upgrade --target all
+npx coderigup upgrade --target all
 ```
 
 ## 知識庫 (`docs/`)

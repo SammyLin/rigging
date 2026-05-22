@@ -1,10 +1,20 @@
 #!/usr/bin/env node
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { cac } from 'cac';
 import { runInit } from './commands/init.js';
 import { runUpgrade } from './commands/upgrade.js';
 import { runUninstall } from './commands/uninstall.js';
 
-const cli = cac('rigging');
+// Single source of truth for the version: read it from package.json at runtime
+// rather than duplicating the literal here. `..` resolves to the package root
+// in both layouts — dev (cli/src or cli/dist) and published (package/dist).
+const pkg = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8'),
+) as { version: string };
+
+const cli = cac('coderigup');
 
 cli
   .command('init', 'Install rigging standards into the current project')
@@ -26,6 +36,6 @@ cli
   .action(runUninstall);
 
 cli.help();
-cli.version('0.0.0');
+cli.version(pkg.version);
 
 cli.parse();

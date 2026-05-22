@@ -27,6 +27,7 @@ import {
   HOOK_FILES,
   LANG_MANIFEST,
   SKILLS,
+  VENDORED_SKILLS,
 } from './manifest.js';
 
 function createFakeSource(root: string): void {
@@ -44,6 +45,18 @@ function createFakeSource(root: string): void {
   }
   for (const skill of SKILLS) {
     writeFileSync(join(root, 'skills', skill.source), `# ${skill.source}\nbody\n`);
+  }
+  for (const skill of VENDORED_SKILLS) {
+    // Directory-based skills ship their own SKILL.md plus bundled files.
+    mkdirSync(join(root, 'skills', skill.dir, 'references'), { recursive: true });
+    writeFileSync(
+      join(root, 'skills', skill.dir, 'SKILL.md'),
+      `---\nname: ${skill.name}\ndescription: "vendored"\nmanaged-by: rigging\n---\nbody\n`,
+    );
+    writeFileSync(
+      join(root, 'skills', skill.dir, 'references', 'checklist.md'),
+      `# checklist\nbody\n`,
+    );
   }
   for (const f of AGENT_FILES) {
     // Agents need real frontmatter — makeKiroAgent reads name/description from it.
@@ -114,6 +127,19 @@ describe('deployClaude', () => {
       expect(content).toContain(`description: "${skill.description}"`);
       expect(content).toContain('managed-by: rigging');
       expect(content).toContain(`# ${skill.source}`);
+    }
+  });
+
+  it('copies vendored skill directories verbatim, including bundled references', () => {
+    deploy();
+    for (const skill of VENDORED_SKILLS) {
+      const skillDir = join(target, '.claude/skills', skill.name);
+      expect(existsSync(join(skillDir, 'SKILL.md'))).toBe(true);
+      expect(existsSync(join(skillDir, 'references/checklist.md'))).toBe(true);
+      // Copied as-is, NOT re-wrapped: frontmatter is the source's own.
+      const content = readFileSync(join(skillDir, 'SKILL.md'), 'utf8');
+      expect(content).toContain(`name: ${skill.name}`);
+      expect(content).toContain('managed-by: rigging');
     }
   });
 
@@ -233,6 +259,15 @@ describe('deployKiro', () => {
     expect(existsSync(join(target, '.kiro/steering/on-demand'))).toBe(false);
   });
 
+  it('copies vendored skill directories to .kiro/skills/ verbatim', () => {
+    deployK();
+    for (const skill of VENDORED_SKILLS) {
+      const skillDir = join(target, '.kiro/skills', skill.name);
+      expect(existsSync(join(skillDir, 'SKILL.md'))).toBe(true);
+      expect(existsSync(join(skillDir, 'references/checklist.md'))).toBe(true);
+    }
+  });
+
   it('writes the code-reviewer agent as Kiro JSON', () => {
     deployK();
     const path = join(target, '.kiro/agents/code-reviewer.json');
@@ -282,7 +317,7 @@ describe('buildRiggingSection', () => {
 
   it('embeds all skills with their descriptions', () => {
     const section = buildRiggingSection([], '2026-04-30', 'x');
-    for (const skill of SKILLS) {
+    for (const skill of [...SKILLS, ...VENDORED_SKILLS]) {
       expect(section).toContain(`**${skill.name}**`);
       expect(section).toContain(skill.description);
     }
@@ -434,6 +469,9 @@ describe('uninstallClaude', () => {
     for (const skill of SKILLS) {
       expect(existsSync(join(target, '.claude/skills', skill.name, 'SKILL.md'))).toBe(false);
     }
+    for (const skill of VENDORED_SKILLS) {
+      expect(existsSync(join(target, '.claude/skills', skill.name))).toBe(false);
+    }
     for (const f of [...AGENT_FILES, ...COMMAND_FILES, ...HOOK_FILES]) {
       expect(existsSync(join(target, '.claude', f))).toBe(false);
     }
@@ -551,6 +589,9 @@ describe('uninstallKiro', () => {
     uninstall();
     for (const skill of SKILLS) {
       expect(existsSync(join(target, '.kiro/skills', skill.name, 'SKILL.md'))).toBe(false);
+      expect(existsSync(join(target, '.kiro/skills', skill.name))).toBe(false);
+    }
+    for (const skill of VENDORED_SKILLS) {
       expect(existsSync(join(target, '.kiro/skills', skill.name))).toBe(false);
     }
   });

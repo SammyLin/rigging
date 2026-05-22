@@ -16,11 +16,12 @@ rules/                       → .claude/rules/
   lang-go.md                 — auto-detected by go.mod
   lang-frontend.md           — auto-detected by .tsx / vite.config / React
 
-skills/                      → .claude/skills/<name>/SKILL.md (wrapped by setup.sh)
-  security.md                → security-check
-  project-ops.md             → infra-ops
-  harness-engineering.md     → harness-review
-  agent-browser-skill.md     → browser-verify
+skills/                      → .claude/skills/<name>/SKILL.md
+  security.md                → security-check       (single-file source, wrapped by installer)
+  project-ops.md             → infra-ops            (single-file source, wrapped by installer)
+  harness-engineering.md     → harness-review       (single-file source, wrapped by installer)
+  agent-browser-skill.md     → browser-verify       (single-file source, wrapped by installer)
+  code-review-expert/        → code-review-expert   (vendored directory, copied verbatim; SKILL.md + references/)
 
 agents/                      → .claude/agents/
   code-reviewer.md           — subagent for the Verify step
@@ -34,7 +35,7 @@ hooks/                       → .claude/hooks/
   secret-guard.sh            — PreToolUse Bash
 
 settings.json                → .claude/settings.json
-setup.sh                     — Installer (language detection, Kiro format conversion)
+cli/                         — Installer source (TypeScript). Published to npm as `coderigup`.
 docs/                        — Knowledge base (not installed to target projects)
 ```
 
@@ -50,19 +51,19 @@ docs/                        — Knowledge base (not installed to target project
 
 ## Kiro CLI Mapping
 
-Kiro CLI's format doesn't fully overlap with Claude Code. `setup.sh` handles the conversions automatically:
+Kiro CLI's format doesn't fully overlap with Claude Code. The `coderigup` CLI handles the conversions automatically (logic lives in `cli/src/kiro-convert.ts`):
 
-| Claude Code | Kiro CLI | What setup.sh does |
+| Claude Code | Kiro CLI | What `coderigup` does |
 |-------------|----------|--------------------|
-| `paths:` YAML array | `inclusion: fileMatch` + `fileMatchPattern: "a\|b\|c"` | Auto-converts |
+| `paths:` YAML array | `inclusion: fileMatch` + `fileMatchPattern: ["a", "b", "c"]` | Auto-converts |
 | Agent markdown | Agent JSON | Parses frontmatter + body, emits JSON |
 | Commands / Hooks / settings.json | — | ❌ Not supported by Kiro CLI — skipped |
 
 ## Editing Principles
 
 - **Core rules**: keep concise, high value density. These are ALWAYS in context.
-- **Language rules**: self-contained per language. Scoped by `paths:`. Detection logic lives in `setup.sh::detect_languages()`.
-- **Situational rules**: source files (security.md etc.) are wrapped into SKILL.md with frontmatter by setup.sh.
+- **Language rules**: self-contained per language. Scoped by `paths:`. Detection logic lives in `cli/src/detect.ts`.
+- **Situational rules**: source files (security.md etc.) are wrapped into SKILL.md with frontmatter by `cli/src/claude-format.ts`.
 - **Skill description** (~250 chars) is the trigger — phrase it the way a user would naturally ask.
 - **Agent + Commands**: **restraint principle** — only one agent + two commands, mapping to Verify + Commit in the 5-step flow. More than that is a "persona zoo."
 - **Hooks**: only ship the two language-agnostic, low-risk ones (auto-format, secret-guard).
@@ -70,15 +71,31 @@ Kiro CLI's format doesn't fully overlap with Claude Code. `setup.sh` handles the
 
 ## Adding a New Item
 
+All installer wiring lives in `cli/src/manifest.ts`. Add an entry there, plus detection logic in `cli/src/detect.ts` for new languages.
+
 ### Adding a Skill
 
+There are two kinds of skills:
+
+**Single-file skill** (the default — source `.md` wrapped into `SKILL.md` at install time):
+
 1. Write the source file `skills/foo.md`.
-2. Add to `setup.sh` arrays: `SKILL_NAMES` / `SKILL_SOURCES` / `SKILL_DESCRIPTIONS`.
+2. Append a `SkillManifestEntry` to `SKILLS` in `cli/src/manifest.ts` (`name`, `source`, `description`, `summary`, `summaryZh`).
+3. Run `cd cli && pnpm gen:docs` to refresh the README skill tables.
+
+**Vendored directory skill** (a skill that ships its own `SKILL.md` plus `references/` / `scripts/`, copied verbatim — used when bringing in an external skill like `code-review-expert`):
+
+1. Place the whole skill directory under `skills/<dir>/` (keep its own `SKILL.md`; add `managed-by: rigging` to the frontmatter). If vendored from another repo, add an `ATTRIBUTION.md` noting the upstream source + license.
+2. Append a `VendoredSkillManifestEntry` to `VENDORED_SKILLS` in `cli/src/manifest.ts` (`name`, `dir`, `description`, `summary`, `summaryZh`). The installer copies the directory into `.claude/skills/<name>/` (and `.kiro/skills/<name>/`) as-is — no wrapping.
+3. Run `cd cli && pnpm gen:docs` to refresh the README skill tables.
+
+**Single source of truth:** the skill **tables** in `README.md` / `README.zh-TW.md` are generated from the manifest by `cli/src/gen-docs.ts` (between the `<!-- skills:table:start -->` markers) — never hand-edit them; run `pnpm gen:docs`. A drift guard in `gen-docs.test.ts` fails `pnpm test` if they're stale. The skill listings in the directory **trees** (README + the Repo Layout above) are illustrative samples, not exhaustive lists — no need to update them for every skill.
 
 ### Adding a Language
 
 1. Write `rules/lang-xxx.md` with a `paths:` frontmatter at the top.
-2. Add to `setup.sh` arrays: `LANG_FILES` / `LANG_DETECT` / `LANG_LABELS` / `LANG_DESCRIPTIONS` / `LANG_KIRO_PATTERN`.
+2. Append a `LangManifestEntry` to `LANG_MANIFEST` in `cli/src/manifest.ts` (`language`, `file`, `label`, `kiroPattern`).
+3. Add the detection rule for it in `cli/src/detect.ts` (e.g. which files trigger it).
 
 ### Adding an Agent / Command / Hook
 
@@ -87,26 +104,28 @@ Kiro CLI's format doesn't fully overlap with Claude Code. `setup.sh` handles the
 If truly needed:
 
 1. Place the file under `agents/` / `commands/` / `hooks/`.
-2. Add to `setup.sh` arrays: `AGENT_FILES` / `COMMAND_FILES` / `HOOK_FILES`.
+2. Add the path to `AGENT_FILES` / `COMMAND_FILES` / `HOOK_FILES` in `cli/src/manifest.ts`.
 
 ## Testing
 
 ```bash
-# Start a local HTTP server that serves this repo
-python3 -m http.server 8765 --bind 127.0.0.1 &
+# Unit tests + lint inside cli/
+cd cli && pnpm install && pnpm test && pnpm lint
 
-# Simulate a Go project in a temp dir
+# Smoke-test the installer against a temp project
 mkdir -p /tmp/test && cd /tmp/test && touch go.mod
-BASE_URL=http://127.0.0.1:8765 bash <(curl -s http://127.0.0.1:8765/setup.sh)
+cd -
+cd cli && pnpm dev -- init --dry-run --target all
+# (drop --dry-run to actually write files into /tmp/test)
 
 # Inspect the result
 find /tmp/test -type f | sort
 ```
 
-`setup.sh` honors a `BASE_URL` environment variable override for local testing.
+`pnpm dev` runs the CLI from source via tsx. `pnpm build` compiles to `dist/`, then `node dist/index.js init` runs the built artifact. See `cli/README.md` for the full dev/publish flow.
 
 ## Language Policy
 
-- **AI-facing files** (rules, skills, agents, commands, hooks, this CLAUDE.md, `setup.sh` output) are written in **English**.
+- **AI-facing files** (rules, skills, agents, commands, hooks, this CLAUDE.md, installer output) are written in **English**.
 - **Human-facing docs** (README, `docs/`) may be bilingual. The primary README is English; `README.zh-TW.md` is the Traditional Chinese mirror.
-- **When editing README, update both `README.md` and `README.zh-TW.md`** — they must stay in sync.
+- **When editing README, update both `README.md` and `README.zh-TW.md`** — they must stay in sync. The skill tables are the exception: they're generated for both languages by `pnpm gen:docs` (zh text comes from `summaryZh` in the manifest), so edit the manifest, not the tables.
