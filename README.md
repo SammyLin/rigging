@@ -36,7 +36,8 @@ npx coderigup init
 │   ├── security-check/          new API, shipping, user input
 │   ├── infra-ops/               Docker, CI/CD, git workflow
 │   ├── harness-review/          systemic improvements
-│   └── browser-verify/          frontend visual verification
+│   ├── browser-verify/          frontend visual verification
+│   └── code-review-expert/      SOLID + security review of git changes
 ├── agents/
 │   └── code-reviewer.md      ← subagent: structured review of changes
 ├── commands/
@@ -135,12 +136,19 @@ Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 
 ### Skills — agent-invoked on demand
 
+<!-- skills:table:start -->
 | Skill | Source | Trigger |
 |-------|--------|---------|
 | `security-check` | [skills/security.md](skills/security.md) | adding APIs, shipping, handling user input |
 | `infra-ops` | [skills/project-ops.md](skills/project-ops.md) | Docker, CI/CD, git workflow |
 | `harness-review` | [skills/harness-engineering.md](skills/harness-engineering.md) | systemic improvements |
 | `browser-verify` | [skills/agent-browser-skill.md](skills/agent-browser-skill.md) | frontend visual verification |
+| `code-review-expert` | [skills/code-review-expert/](skills/code-review-expert/) | SOLID + security review of current git changes |
+<!-- skills:table:end -->
+
+> This table is generated from `cli/src/manifest.ts` — run `pnpm gen:docs` after changing the skill list; do not hand-edit between the markers.
+
+The first four skills are single-file sources wrapped into `SKILL.md` at install time. `code-review-expert` is a **directory-based skill** vendored verbatim (it ships its own `SKILL.md` + `references/`); see [skills/code-review-expert/ATTRIBUTION.md](skills/code-review-expert/ATTRIBUTION.md) for its upstream source.
 
 ### Agent + Commands — supporting Verify / Commit
 

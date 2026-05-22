@@ -25,6 +25,8 @@
     "test": "vitest run",
     "lint": "eslint . && prettier --check .",
     "lint:fix": "eslint --fix . && prettier --write .",
+    "gen:docs": "tsx scripts/gen-docs.ts",
+    "check:docs": "tsx scripts/gen-docs.ts --check",
     "copy-sources": "node scripts/copy-sources.mjs",
     "clean-sources": "node scripts/copy-sources.mjs --clean",
     "prepack": "pnpm run build && pnpm run copy-sources",

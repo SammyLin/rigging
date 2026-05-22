@@ -36,7 +36,8 @@ npx coderigup init
 │   ├── security-check/          新增 API、上線前、處理使用者輸入
 │   ├── infra-ops/               Docker、CI/CD、git workflow
 │   ├── harness-review/          系統性改進
-│   └── browser-verify/          前端視覺驗證
+│   ├── browser-verify/          前端視覺驗證
+│   └── code-review-expert/      git 變更的 SOLID + 安全審查
 ├── agents/
 │   └── code-reviewer.md      ← Subagent：結構化審查變更
 ├── commands/
@@ -135,12 +136,19 @@ Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
 
 ### Skills — Claude 按需呼叫
 
+<!-- skills:table:start -->
 | Skill | 來源 | 觸發場景 |
 |-------|------|---------|
 | `security-check` | [skills/security.md](skills/security.md) | 新增 API、上線前、處理使用者輸入 |
 | `infra-ops` | [skills/project-ops.md](skills/project-ops.md) | Docker、CI/CD、git workflow |
 | `harness-review` | [skills/harness-engineering.md](skills/harness-engineering.md) | 系統性改進 |
 | `browser-verify` | [skills/agent-browser-skill.md](skills/agent-browser-skill.md) | 前端視覺驗證 |
+| `code-review-expert` | [skills/code-review-expert/](skills/code-review-expert/) | 對當前 git 變更做 SOLID + 安全審查 |
+<!-- skills:table:end -->
+
+> 這個表格由 `cli/src/manifest.ts` 產生 —— 改動 skill 清單後請執行 `pnpm gen:docs`，不要手動編輯 markers 之間的內容。
+
+前四個 skill 是單檔來源，安裝時包成 `SKILL.md`；`code-review-expert` 是**目錄式 skill**，原樣 vendor（自帶 `SKILL.md` + `references/`），上游來源見 [skills/code-review-expert/ATTRIBUTION.md](skills/code-review-expert/ATTRIBUTION.md)。
 
 ### Agent + Commands — 支撐 Verify / Commit
 

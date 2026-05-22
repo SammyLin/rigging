@@ -16,11 +16,12 @@ rules/                       → .claude/rules/
   lang-go.md                 — auto-detected by go.mod
   lang-frontend.md           — auto-detected by .tsx / vite.config / React
 
-skills/                      → .claude/skills/<name>/SKILL.md (wrapped by the installer)
-  security.md                → security-check
-  project-ops.md             → infra-ops
-  harness-engineering.md     → harness-review
-  agent-browser-skill.md     → browser-verify
+skills/                      → .claude/skills/<name>/SKILL.md
+  security.md                → security-check       (single-file source, wrapped by installer)
+  project-ops.md             → infra-ops            (single-file source, wrapped by installer)
+  harness-engineering.md     → harness-review       (single-file source, wrapped by installer)
+  agent-browser-skill.md     → browser-verify       (single-file source, wrapped by installer)
+  code-review-expert/        → code-review-expert   (vendored directory, copied verbatim; SKILL.md + references/)
 
 agents/                      → .claude/agents/
   code-reviewer.md           — subagent for the Verify step
@@ -74,8 +75,21 @@ All installer wiring lives in `cli/src/manifest.ts`. Add an entry there, plus de
 
 ### Adding a Skill
 
+There are two kinds of skills:
+
+**Single-file skill** (the default — source `.md` wrapped into `SKILL.md` at install time):
+
 1. Write the source file `skills/foo.md`.
-2. Append a `SkillManifestEntry` to `SKILLS` in `cli/src/manifest.ts` (`name`, `source`, `description`).
+2. Append a `SkillManifestEntry` to `SKILLS` in `cli/src/manifest.ts` (`name`, `source`, `description`, `summary`, `summaryZh`).
+3. Run `cd cli && pnpm gen:docs` to refresh the README skill tables.
+
+**Vendored directory skill** (a skill that ships its own `SKILL.md` plus `references/` / `scripts/`, copied verbatim — used when bringing in an external skill like `code-review-expert`):
+
+1. Place the whole skill directory under `skills/<dir>/` (keep its own `SKILL.md`; add `managed-by: rigging` to the frontmatter). If vendored from another repo, add an `ATTRIBUTION.md` noting the upstream source + license.
+2. Append a `VendoredSkillManifestEntry` to `VENDORED_SKILLS` in `cli/src/manifest.ts` (`name`, `dir`, `description`, `summary`, `summaryZh`). The installer copies the directory into `.claude/skills/<name>/` (and `.kiro/skills/<name>/`) as-is — no wrapping.
+3. Run `cd cli && pnpm gen:docs` to refresh the README skill tables.
+
+**Single source of truth:** the skill **tables** in `README.md` / `README.zh-TW.md` are generated from the manifest by `cli/src/gen-docs.ts` (between the `<!-- skills:table:start -->` markers) — never hand-edit them; run `pnpm gen:docs`. A drift guard in `gen-docs.test.ts` fails `pnpm test` if they're stale. The skill listings in the directory **trees** (README + the Repo Layout above) are illustrative samples, not exhaustive lists — no need to update them for every skill.
 
 ### Adding a Language
 
@@ -114,4 +128,4 @@ find /tmp/test -type f | sort
 
 - **AI-facing files** (rules, skills, agents, commands, hooks, this CLAUDE.md, installer output) are written in **English**.
 - **Human-facing docs** (README, `docs/`) may be bilingual. The primary README is English; `README.zh-TW.md` is the Traditional Chinese mirror.
-- **When editing README, update both `README.md` and `README.zh-TW.md`** — they must stay in sync.
+- **When editing README, update both `README.md` and `README.zh-TW.md`** — they must stay in sync. The skill tables are the exception: they're generated for both languages by `pnpm gen:docs` (zh text comes from `summaryZh` in the manifest), so edit the manifest, not the tables.
