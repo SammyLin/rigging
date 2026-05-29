@@ -59,6 +59,19 @@ Kiro CLI's format doesn't fully overlap with Claude Code. The `coderigup` CLI ha
 | Agent markdown | Agent JSON | Parses frontmatter + body, emits JSON |
 | Commands / Hooks / settings.json | — | ❌ Not supported by Kiro CLI — skipped |
 
+## opencode Mapping
+
+opencode only auto-loads `AGENTS.md` at the project root plus files listed in `opencode.json`'s `instructions` field. The `coderigup` CLI handles conversions in `cli/src/opencode-convert.ts`:
+
+| Claude Code | opencode | What `coderigup` does |
+|-------------|----------|--------------------|
+| `paths:` YAML array | `.opencode/rules/*.md` (frontmatter stripped) | Strips `paths:` (opencode has no path-gating); files always-on |
+| (none) | `opencode.json` `{ "instructions": [".opencode/rules/*.md"] }` | Auto-generates; sidecar at `opencode.rigging.json` if the user already has one |
+| Agent markdown (`name`, `description`, `tools`, `model`) | Agent markdown (`description`, `mode: subagent`, optional `model`) | Rewrites frontmatter; body passes through; `tools:` dropped |
+| Command markdown (`description`, `allowed-tools`, `argument-hint`) | Command markdown (`description` only; body is the template) | Drops Claude-only frontmatter fields; `$ARGUMENTS` passes through |
+| Hooks / settings.json (project-level permissions) | — | ❌ opencode has no event hooks; permissions live in user-owned `opencode.json` — skipped |
+| AGENTS.md rigging section (`<!-- rigging:start -->`) | AGENTS.md opencode section (`<!-- rigging:opencode:start -->`) | Separate marker pair so both sections coexist under `--target all` |
+
 ## Editing Principles
 
 - **Core rules**: keep concise, high value density. These are ALWAYS in context.

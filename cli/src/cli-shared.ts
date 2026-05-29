@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { detectLanguages, LANGUAGES, parseLanguages, type Language } from './detect.js';
 
-export const TARGETS = ['claude', 'kiro', 'all'] as const;
+export const TARGETS = ['claude', 'kiro', 'opencode', 'all'] as const;
 export type Target = (typeof TARGETS)[number];
 
 // Returns 'claude' for undefined input. Returns undefined for any unknown
