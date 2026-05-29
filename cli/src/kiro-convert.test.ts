@@ -41,7 +41,7 @@ describe('makeKiroSteering', () => {
       '---\n' +
         'inclusion: fileMatch\n' +
         'fileMatchPattern: ["**/*.ts", "package.json"]\n' +
-        'managed-by: rigging\n' +
+        'managed-by: coderigup\n' +
         '---\n' +
         '# Node Standards\nbody\n',
     );
@@ -57,7 +57,7 @@ describe('makeKiroSteering', () => {
     expect(result).toBe(
       '---\n' +
         'inclusion: always\n' +
-        'managed-by: rigging\n' +
+        'managed-by: coderigup\n' +
         '---\n' +
         '# Node Standards\nbody\n',
     );
@@ -75,9 +75,9 @@ describe('makeKiroSteering', () => {
     expect(result).not.toContain('fileMatchPattern');
   });
 
-  it('always includes managed-by: rigging', () => {
-    expect(makeKiroSteering(source)).toContain('managed-by: rigging');
-    expect(makeKiroSteering(source, 'x')).toContain('managed-by: rigging');
+  it('always includes managed-by: coderigup', () => {
+    expect(makeKiroSteering(source)).toContain('managed-by: coderigup');
+    expect(makeKiroSteering(source, 'x')).toContain('managed-by: coderigup');
   });
 
   it('strips the source frontmatter before wrapping', () => {
@@ -90,7 +90,7 @@ describe('makeKiroSteering', () => {
     const noFrontmatter = '# Plain Heading\nbody\n';
     const result = makeKiroSteering(noFrontmatter);
     expect(result).toBe(
-      '---\ninclusion: always\nmanaged-by: rigging\n---\n# Plain Heading\nbody\n',
+      '---\ninclusion: always\nmanaged-by: coderigup\n---\n# Plain Heading\nbody\n',
     );
   });
 });

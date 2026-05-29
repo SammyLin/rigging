@@ -1,16 +1,17 @@
 # coderigup
 
-Node CLI that installs team AI-coding standards into a project — Claude Code, Kiro CLI, or AGENTS.md-compatible tools. Published on npm as `coderigup` (the name `rigging` was taken). See `docs/exec-plans/active/v2-cli-rewrite.md` for the design.
+Node CLI that installs team AI-coding standards into a project — Claude Code, Kiro CLI, or AGENTS.md-compatible tools (opencode). Published on npm as `coderigup`. See `docs/exec-plans/completed/v2-cli-rewrite.md` for the design history.
 
 ## Public usage
 
 ```bash
-npx coderigup init                  # auto-detect language, install Claude Code config
-npx coderigup init --target kiro    # install Kiro CLI config
-npx coderigup init --target all     # both
+npx coderigup init                      # auto-detect language, install Claude Code config
+npx coderigup init --target kiro        # install Kiro CLI config
+npx coderigup init --target opencode    # install opencode config
+npx coderigup init --target all         # all three
 
-npx coderigup upgrade --target all  # refresh after a new release
-npx coderigup uninstall             # remove coderigup-managed files (keeps user files)
+npx coderigup upgrade --target all      # refresh after a new release
+npx coderigup uninstall                 # remove coderigup-managed files (keeps user files)
 ```
 
 ## Dev

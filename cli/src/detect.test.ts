@@ -8,7 +8,7 @@ describe('detectLanguages', () => {
   let dir: string;
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'rigging-detect-'));
+    dir = mkdtempSync(join(tmpdir(), 'coderigup-detect-'));
   });
 
   afterEach(() => {

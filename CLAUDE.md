@@ -1,4 +1,4 @@
-# rigging repo
+# coderigup repo
 
 Team AI-coding standards installer for bootstrapping new projects. Built on **progressive disclosure**: core rules always loaded, language rules gated by `paths:`, situational rules invoked as Skills, plus Agent + Commands + Hooks to support the 5-step flow.
 
@@ -66,11 +66,11 @@ opencode only auto-loads `AGENTS.md` at the project root plus files listed in `o
 | Claude Code | opencode | What `coderigup` does |
 |-------------|----------|--------------------|
 | `paths:` YAML array | `.opencode/rules/*.md` (frontmatter stripped) | Strips `paths:` (opencode has no path-gating); files always-on |
-| (none) | `opencode.json` `{ "instructions": [".opencode/rules/*.md"] }` | Auto-generates; sidecar at `opencode.rigging.json` if the user already has one |
+| (none) | `opencode.json` `{ "instructions": [".opencode/rules/*.md"] }` | Auto-generates; sidecar at `opencode.coderigup.json` if the user already has one |
 | Agent markdown (`name`, `description`, `tools`, `model`) | Agent markdown (`description`, `mode: subagent`, optional `model`) | Rewrites frontmatter; body passes through; `tools:` dropped |
 | Command markdown (`description`, `allowed-tools`, `argument-hint`) | Command markdown (`description` only; body is the template) | Drops Claude-only frontmatter fields; `$ARGUMENTS` passes through |
 | Hooks / settings.json (project-level permissions) | — | ❌ opencode has no event hooks; permissions live in user-owned `opencode.json` — skipped |
-| AGENTS.md rigging section (`<!-- rigging:start -->`) | AGENTS.md opencode section (`<!-- rigging:opencode:start -->`) | Separate marker pair so both sections coexist under `--target all` |
+| AGENTS.md coderigup section (`<!-- coderigup:start -->`) | AGENTS.md opencode section (`<!-- coderigup:opencode:start -->`) | Separate marker pair so both sections coexist under `--target all` |
 
 ## Editing Principles
 
@@ -98,7 +98,7 @@ There are two kinds of skills:
 
 **Vendored directory skill** (a skill that ships its own `SKILL.md` plus `references/` / `scripts/`, copied verbatim — used when bringing in an external skill like `code-review-expert`):
 
-1. Place the whole skill directory under `skills/<dir>/` (keep its own `SKILL.md`; add `managed-by: rigging` to the frontmatter). If vendored from another repo, add an `ATTRIBUTION.md` noting the upstream source + license.
+1. Place the whole skill directory under `skills/<dir>/` (keep its own `SKILL.md`; add `managed-by: coderigup` to the frontmatter). If vendored from another repo, add an `ATTRIBUTION.md` noting the upstream source + license.
 2. Append a `VendoredSkillManifestEntry` to `VENDORED_SKILLS` in `cli/src/manifest.ts` (`name`, `dir`, `description`, `summary`, `summaryZh`). The installer copies the directory into `.claude/skills/<name>/` (and `.kiro/skills/<name>/`) as-is — no wrapping.
 3. Run `cd cli && pnpm gen:docs` to refresh the README skill tables.
 

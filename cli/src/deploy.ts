@@ -33,14 +33,14 @@ import {
   VENDORED_SKILLS,
 } from './manifest.js';
 
-const DEFAULT_SOURCE = 'https://github.com/SammyLin/rigging';
+const DEFAULT_SOURCE = 'https://github.com/SammyLin/coderigup';
 const CLAUDE_MARKERS = {
-  start: '<!-- rigging:start -->',
-  end: '<!-- rigging:end -->',
+  start: '<!-- coderigup:start -->',
+  end: '<!-- coderigup:end -->',
 } as const;
 const OPENCODE_MARKERS = {
-  start: '<!-- rigging:opencode:start -->',
-  end: '<!-- rigging:opencode:end -->',
+  start: '<!-- coderigup:opencode:start -->',
+  end: '<!-- coderigup:opencode:end -->',
 } as const;
 
 interface SectionMarkers {
@@ -49,7 +49,7 @@ interface SectionMarkers {
 }
 
 export interface DeployOptions {
-  // Where the rigging source files live (rules/, skills/, etc.).
+  // Where the coderigup source files live (rules/, skills/, etc.).
   sourceRoot: string;
   // Where `.claude/` will be created (typically the user's project root).
   targetRoot: string;
@@ -60,7 +60,7 @@ export interface DeployOptions {
   // Used in generated entry files (Kiro standards.md, future CLAUDE.md).
   // Override for deterministic tests.
   installedAt?: string; // YYYY-MM-DD; default = today
-  source?: string; // canonical rigging URL; default = DEFAULT_SOURCE
+  source?: string; // canonical coderigup URL; default = DEFAULT_SOURCE
 }
 
 export function deployClaude(options: DeployOptions): void {
@@ -121,16 +121,20 @@ export function deployClaude(options: DeployOptions): void {
   installSettings(sourceRoot, claudeDir, log);
 
   log('Entry files (AGENTS.md / CLAUDE.md):');
-  const section = buildRiggingSection(detectedLanguages, installedAt, source);
-  const agentsAction = mergeRiggingSection(join(targetRoot, 'AGENTS.md'), section, CLAUDE_MARKERS);
+  const section = buildCoderigupSection(detectedLanguages, installedAt, source);
+  const agentsAction = mergeCoderigupSection(
+    join(targetRoot, 'AGENTS.md'),
+    section,
+    CLAUDE_MARKERS,
+  );
   log(`  ✓ AGENTS.md (${agentsAction})`);
   syncClaudeMd(join(targetRoot, 'CLAUDE.md'), section, log);
 }
 
-// Build the rigging section that goes inside AGENTS.md / CLAUDE.md, wrapped
+// Build the coderigup section that goes inside AGENTS.md / CLAUDE.md, wrapped
 // with marker comments so future runs can replace just the section while
 // preserving any user-authored content above or below.
-export function buildRiggingSection(
+export function buildCoderigupSection(
   detectedLanguages: Language[],
   installedAt: string,
   source: string,
@@ -146,7 +150,7 @@ export function buildRiggingSection(
     .join('\n');
 
   return `${CLAUDE_MARKERS.start}
-# rigging standards
+# coderigup standards
 # source: ${source}
 # installed: ${installedAt}
 
@@ -189,11 +193,11 @@ ${skillLines}
 ${CLAUDE_MARKERS.end}`;
 }
 
-// Opencode counterpart to buildRiggingSection. Uses a separate marker pair
+// Opencode counterpart to buildCoderigupSection. Uses a separate marker pair
 // so a `--target all` install lands both sections in AGENTS.md side by side
 // without overwriting each other. Rule paths point at `.opencode/rules/` since
 // that's where this target installs them.
-export function buildOpencodeRiggingSection(
+export function buildOpencodeCoderigupSection(
   detectedLanguages: Language[],
   installedAt: string,
   source: string,
@@ -209,7 +213,7 @@ export function buildOpencodeRiggingSection(
     .join('\n');
 
   return `${OPENCODE_MARKERS.start}
-# rigging standards (opencode)
+# coderigup standards (opencode)
 # source: ${source}
 # installed: ${installedAt}
 
@@ -260,7 +264,7 @@ type MergeAction = 'created' | 'replaced' | 'prepended';
 //   - file missing            → write the section as-is
 //   - file has both markers   → replace what's between, preserve everything else
 //   - file lacks markers      → prepend the section so it's at the top
-function mergeRiggingSection(
+function mergeCoderigupSection(
   filePath: string,
   section: string,
   markers: SectionMarkers,
@@ -303,7 +307,7 @@ function syncClaudeMd(claudePath: string, section: string, log: (msg: string) =>
       // fall through to dual-write
     }
   }
-  const action = mergeRiggingSection(claudePath, section, CLAUDE_MARKERS);
+  const action = mergeCoderigupSection(claudePath, section, CLAUDE_MARKERS);
   log(`  ✓ CLAUDE.md (${action})`);
 }
 
@@ -329,7 +333,7 @@ function pathExists(p: string): boolean {
 // settings.json install policy:
 //   no existing file       → copy
 //   identical to source    → no-op
-//   exists and differs     → write sidecar at .claude/settings.rigging.json,
+//   exists and differs     → write sidecar at .claude/settings.coderigup.json,
 //                            leave the user's file untouched
 function installSettings(sourceRoot: string, claudeDir: string, log: (msg: string) => void): void {
   const src = join(sourceRoot, 'settings.json');
@@ -344,7 +348,7 @@ function installSettings(sourceRoot: string, claudeDir: string, log: (msg: strin
     log('  ✓ settings.json (already up to date)');
     return;
   }
-  const sidecar = join(claudeDir, 'settings.rigging.json');
+  const sidecar = join(claudeDir, 'settings.coderigup.json');
   copyTo(src, sidecar);
   log(`  ! settings.json differs — team version installed at ${sidecar}`);
 }
@@ -413,9 +417,9 @@ function todayIso(): string {
 function buildKiroEntry(source: string, installedAt: string): string {
   return `---
 inclusion: always
-managed-by: rigging
+managed-by: coderigup
 ---
-# rigging standards
+# coderigup standards
 # source: ${source}
 # installed: ${installedAt}
 
@@ -452,7 +456,7 @@ export function uninstallClaude(options: UninstallOptions): void {
   const { targetRoot, log = console.log } = options;
   const claudeDir = join(targetRoot, '.claude');
 
-  log('Removing rigging-managed Claude files:');
+  log('Removing coderigup-managed Claude files:');
   for (const file of CORE_FILES) {
     if (removeIfExists(join(claudeDir, 'rules', file))) log(`  ✗ rules/${file}`);
   }
@@ -472,8 +476,8 @@ export function uninstallClaude(options: UninstallOptions): void {
   }
   // Sidecar is always ours; main settings.json may be user-customized so we
   // leave it alone — user can delete manually if they want.
-  if (removeIfExists(join(claudeDir, 'settings.rigging.json'))) {
-    log('  ✗ settings.rigging.json');
+  if (removeIfExists(join(claudeDir, 'settings.coderigup.json'))) {
+    log('  ✗ settings.coderigup.json');
   }
   for (const sub of ['rules', 'skills', 'agents', 'commands', 'hooks']) {
     tryRmdir(join(claudeDir, sub));
@@ -483,7 +487,7 @@ export function uninstallClaude(options: UninstallOptions): void {
   log('Entry files:');
   const claudeAction = unsyncClaudeMd(join(targetRoot, 'CLAUDE.md'));
   if (claudeAction !== 'absent') log(`  ✗ CLAUDE.md (${claudeAction})`);
-  const agentsAction = removeRiggingSection(join(targetRoot, 'AGENTS.md'), CLAUDE_MARKERS);
+  const agentsAction = removeCoderigupSection(join(targetRoot, 'AGENTS.md'), CLAUDE_MARKERS);
   if (agentsAction !== 'absent' && agentsAction !== 'no-section') {
     log(`  ✗ AGENTS.md (${agentsAction})`);
   }
@@ -495,7 +499,7 @@ export function uninstallKiro(options: UninstallOptions): void {
   const agentsDir = join(targetRoot, '.kiro/agents');
   const skillsDir = join(targetRoot, '.kiro/skills');
 
-  log('Removing rigging-managed Kiro files:');
+  log('Removing coderigup-managed Kiro files:');
   for (const file of CORE_FILES) {
     if (removeIfExists(join(steeringDir, file))) log(`  ✗ steering/${file}`);
   }
@@ -581,8 +585,8 @@ export function deployOpencode(options: DeployOptions): void {
   installOpencodeConfig(targetRoot, log);
 
   log('Entry file (AGENTS.md):');
-  const section = buildOpencodeRiggingSection(detectedLanguages, installedAt, source);
-  const agentsAction = mergeRiggingSection(
+  const section = buildOpencodeCoderigupSection(detectedLanguages, installedAt, source);
+  const agentsAction = mergeCoderigupSection(
     join(targetRoot, 'AGENTS.md'),
     section,
     OPENCODE_MARKERS,
@@ -593,7 +597,7 @@ export function deployOpencode(options: DeployOptions): void {
 // opencode.json install policy mirrors settings.json:
 //   no existing file       → write our minimal config
 //   identical to source    → no-op
-//   exists and differs     → write sidecar at opencode.rigging.json,
+//   exists and differs     → write sidecar at opencode.coderigup.json,
 //                            leave the user's file untouched
 function installOpencodeConfig(targetRoot: string, log: (msg: string) => void): void {
   const dest = join(targetRoot, 'opencode.json');
@@ -608,7 +612,7 @@ function installOpencodeConfig(targetRoot: string, log: (msg: string) => void): 
     log('  ✓ opencode.json (already up to date)');
     return;
   }
-  const sidecar = join(targetRoot, 'opencode.rigging.json');
+  const sidecar = join(targetRoot, 'opencode.coderigup.json');
   writeTo(sidecar, ours);
   log(`  ! opencode.json differs — team version installed at ${sidecar}`);
 }
@@ -617,7 +621,7 @@ export function uninstallOpencode(options: UninstallOptions): void {
   const { targetRoot, log = console.log } = options;
   const opencodeDir = join(targetRoot, '.opencode');
 
-  log('Removing rigging-managed opencode files:');
+  log('Removing coderigup-managed opencode files:');
   for (const file of CORE_FILES) {
     if (removeIfExists(join(opencodeDir, 'rules', file))) log(`  ✗ rules/${file}`);
   }
@@ -647,8 +651,8 @@ export function uninstallOpencode(options: UninstallOptions): void {
     unlinkSync(configPath);
     log('  ✗ opencode.json');
   }
-  if (removeIfExists(join(targetRoot, 'opencode.rigging.json'))) {
-    log('  ✗ opencode.rigging.json');
+  if (removeIfExists(join(targetRoot, 'opencode.coderigup.json'))) {
+    log('  ✗ opencode.coderigup.json');
   }
   for (const sub of ['rules', 'skills', 'agents', 'commands']) {
     tryRmdir(join(opencodeDir, sub));
@@ -656,7 +660,7 @@ export function uninstallOpencode(options: UninstallOptions): void {
   tryRmdir(opencodeDir);
 
   log('Entry file:');
-  const agentsAction = removeRiggingSection(join(targetRoot, 'AGENTS.md'), OPENCODE_MARKERS);
+  const agentsAction = removeCoderigupSection(join(targetRoot, 'AGENTS.md'), OPENCODE_MARKERS);
   if (agentsAction !== 'absent' && agentsAction !== 'no-section') {
     log(`  ✗ AGENTS.md (${agentsAction})`);
   }
@@ -688,7 +692,7 @@ type RemoveAction = 'absent' | 'no-section' | 'section-removed' | 'file-deleted'
 // Remove a marker-wrapped section from a file. If after removal the file is
 // just whitespace, delete it entirely (it had no user content). Other
 // marker-wrapped sections (e.g. opencode's) in the same file are preserved.
-function removeRiggingSection(filePath: string, markers: SectionMarkers): RemoveAction {
+function removeCoderigupSection(filePath: string, markers: SectionMarkers): RemoveAction {
   if (!pathExists(filePath)) return 'absent';
   const existing = readFileSync(filePath, 'utf8');
   const startIdx = existing.indexOf(markers.start);
@@ -712,7 +716,7 @@ function unsyncClaudeMd(claudePath: string): RemoveAction | 'symlink-removed' {
     unlinkSync(claudePath);
     return 'symlink-removed';
   }
-  return removeRiggingSection(claudePath, CLAUDE_MARKERS);
+  return removeCoderigupSection(claudePath, CLAUDE_MARKERS);
 }
 
 function copyTo(src: string, dest: string): void {

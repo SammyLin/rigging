@@ -13,8 +13,8 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  buildOpencodeRiggingSection,
-  buildRiggingSection,
+  buildOpencodeCoderigupSection,
+  buildCoderigupSection,
   deployClaude,
   deployKiro,
   deployOpencode,
@@ -54,7 +54,7 @@ function createFakeSource(root: string): void {
     mkdirSync(join(root, 'skills', skill.dir, 'references'), { recursive: true });
     writeFileSync(
       join(root, 'skills', skill.dir, 'SKILL.md'),
-      `---\nname: ${skill.name}\ndescription: "vendored"\nmanaged-by: rigging\n---\nbody\n`,
+      `---\nname: ${skill.name}\ndescription: "vendored"\nmanaged-by: coderigup\n---\nbody\n`,
     );
     writeFileSync(
       join(root, 'skills', skill.dir, 'references', 'checklist.md'),
@@ -79,8 +79,8 @@ describe('deployClaude', () => {
   let target: string;
 
   beforeEach(() => {
-    source = mkdtempSync(join(tmpdir(), 'rigging-deploy-src-'));
-    target = mkdtempSync(join(tmpdir(), 'rigging-deploy-tgt-'));
+    source = mkdtempSync(join(tmpdir(), 'coderigup-deploy-src-'));
+    target = mkdtempSync(join(tmpdir(), 'coderigup-deploy-tgt-'));
     createFakeSource(source);
   });
 
@@ -128,7 +128,7 @@ describe('deployClaude', () => {
       const content = readFileSync(skillPath, 'utf8');
       expect(content).toContain(`name: ${skill.name}`);
       expect(content).toContain(`description: "${skill.description}"`);
-      expect(content).toContain('managed-by: rigging');
+      expect(content).toContain('managed-by: coderigup');
       expect(content).toContain(`# ${skill.source}`);
     }
   });
@@ -142,7 +142,7 @@ describe('deployClaude', () => {
       // Copied as-is, NOT re-wrapped: frontmatter is the source's own.
       const content = readFileSync(join(skillDir, 'SKILL.md'), 'utf8');
       expect(content).toContain(`name: ${skill.name}`);
-      expect(content).toContain('managed-by: rigging');
+      expect(content).toContain('managed-by: coderigup');
     }
   });
 
@@ -179,15 +179,15 @@ describe('deployClaude', () => {
     writeFileSync(join(target, '.claude/settings.json'), '{"user":"custom"}');
     deploy();
     expect(readFileSync(join(target, '.claude/settings.json'), 'utf8')).toBe('{"user":"custom"}');
-    expect(existsSync(join(target, '.claude/settings.rigging.json'))).toBe(true);
-    expect(readFileSync(join(target, '.claude/settings.rigging.json'), 'utf8')).toBe('{"v":1}');
+    expect(existsSync(join(target, '.claude/settings.coderigup.json'))).toBe(true);
+    expect(readFileSync(join(target, '.claude/settings.coderigup.json'), 'utf8')).toBe('{"v":1}');
   });
 
   it('skips the sidecar when settings.json is already up to date', () => {
     mkdirSync(join(target, '.claude'), { recursive: true });
     writeFileSync(join(target, '.claude/settings.json'), '{"v":1}');
     deploy();
-    expect(existsSync(join(target, '.claude/settings.rigging.json'))).toBe(false);
+    expect(existsSync(join(target, '.claude/settings.coderigup.json'))).toBe(false);
   });
 });
 
@@ -196,8 +196,8 @@ describe('deployKiro', () => {
   let target: string;
 
   beforeEach(() => {
-    source = mkdtempSync(join(tmpdir(), 'rigging-kiro-src-'));
-    target = mkdtempSync(join(tmpdir(), 'rigging-kiro-tgt-'));
+    source = mkdtempSync(join(tmpdir(), 'coderigup-kiro-src-'));
+    target = mkdtempSync(join(tmpdir(), 'coderigup-kiro-tgt-'));
     createFakeSource(source);
   });
 
@@ -213,7 +213,7 @@ describe('deployKiro', () => {
       detectedLanguages,
       log: () => {},
       installedAt: '2026-04-30',
-      source: 'https://example.test/rigging',
+      source: 'https://example.test/coderigup',
     });
   }
 
@@ -224,7 +224,7 @@ describe('deployKiro', () => {
       expect(existsSync(path)).toBe(true);
       const content = readFileSync(path, 'utf8');
       expect(content).toContain('inclusion: always');
-      expect(content).toContain('managed-by: rigging');
+      expect(content).toContain('managed-by: coderigup');
     }
   });
 
@@ -284,8 +284,8 @@ describe('deployKiro', () => {
     deployK();
     const content = readFileSync(join(target, '.kiro/steering/standards.md'), 'utf8');
     expect(content).toContain('inclusion: always');
-    expect(content).toContain('managed-by: rigging');
-    expect(content).toContain('# source: https://example.test/rigging');
+    expect(content).toContain('managed-by: coderigup');
+    expect(content).toContain('# source: https://example.test/coderigup');
     expect(content).toContain('# installed: 2026-04-30');
   });
 
@@ -295,15 +295,15 @@ describe('deployKiro', () => {
   });
 });
 
-describe('buildRiggingSection', () => {
-  it('wraps content in rigging markers', () => {
-    const section = buildRiggingSection([], '2026-04-30', 'https://example.test');
-    expect(section.startsWith('<!-- rigging:start -->')).toBe(true);
-    expect(section.endsWith('<!-- rigging:end -->')).toBe(true);
+describe('buildCoderigupSection', () => {
+  it('wraps content in coderigup markers', () => {
+    const section = buildCoderigupSection([], '2026-04-30', 'https://example.test');
+    expect(section.startsWith('<!-- coderigup:start -->')).toBe(true);
+    expect(section.endsWith('<!-- coderigup:end -->')).toBe(true);
   });
 
   it('lists detected language rules only', () => {
-    const section = buildRiggingSection(['node', 'go'], '2026-04-30', 'x');
+    const section = buildCoderigupSection(['node', 'go'], '2026-04-30', 'x');
     expect(section).toContain('@.claude/rules/lang-node.md');
     expect(section).toContain('@.claude/rules/lang-go.md');
     expect(section).not.toContain('@.claude/rules/lang-python.md');
@@ -311,7 +311,7 @@ describe('buildRiggingSection', () => {
   });
 
   it('falls back to all language rules when none detected', () => {
-    const section = buildRiggingSection([], '2026-04-30', 'x');
+    const section = buildCoderigupSection([], '2026-04-30', 'x');
     expect(section).toContain('@.claude/rules/lang-node.md');
     expect(section).toContain('@.claude/rules/lang-python.md');
     expect(section).toContain('@.claude/rules/lang-go.md');
@@ -319,7 +319,7 @@ describe('buildRiggingSection', () => {
   });
 
   it('embeds all skills with their descriptions', () => {
-    const section = buildRiggingSection([], '2026-04-30', 'x');
+    const section = buildCoderigupSection([], '2026-04-30', 'x');
     for (const skill of [...SKILLS, ...VENDORED_SKILLS]) {
       expect(section).toContain(`**${skill.name}**`);
       expect(section).toContain(skill.description);
@@ -327,7 +327,7 @@ describe('buildRiggingSection', () => {
   });
 
   it('embeds source URL and install date', () => {
-    const section = buildRiggingSection([], '2026-04-30', 'https://example.test/abc');
+    const section = buildCoderigupSection([], '2026-04-30', 'https://example.test/abc');
     expect(section).toContain('# source: https://example.test/abc');
     expect(section).toContain('# installed: 2026-04-30');
   });
@@ -338,8 +338,8 @@ describe('deployClaude — AGENTS.md / CLAUDE.md fan-out', () => {
   let target: string;
 
   beforeEach(() => {
-    source = mkdtempSync(join(tmpdir(), 'rigging-entry-src-'));
-    target = mkdtempSync(join(tmpdir(), 'rigging-entry-tgt-'));
+    source = mkdtempSync(join(tmpdir(), 'coderigup-entry-src-'));
+    target = mkdtempSync(join(tmpdir(), 'coderigup-entry-tgt-'));
     createFakeSource(source);
   });
 
@@ -355,24 +355,24 @@ describe('deployClaude — AGENTS.md / CLAUDE.md fan-out', () => {
       detectedLanguages,
       log: () => {},
       installedAt: '2026-04-30',
-      source: 'https://example.test/rigging',
+      source: 'https://example.test/coderigup',
     });
   }
 
-  it('creates AGENTS.md with the rigging section', () => {
+  it('creates AGENTS.md with the coderigup section', () => {
     deploy(['node']);
     const agentsPath = join(target, 'AGENTS.md');
     expect(existsSync(agentsPath)).toBe(true);
     const content = readFileSync(agentsPath, 'utf8');
-    expect(content).toContain('<!-- rigging:start -->');
-    expect(content).toContain('<!-- rigging:end -->');
+    expect(content).toContain('<!-- coderigup:start -->');
+    expect(content).toContain('<!-- coderigup:end -->');
     expect(content).toContain('# installed: 2026-04-30');
   });
 
   it('replaces only the marked section in an existing AGENTS.md, preserving user content', () => {
     writeFileSync(
       join(target, 'AGENTS.md'),
-      '# My Project\n\nUser stuff above.\n\n<!-- rigging:start -->\nold section\n<!-- rigging:end -->\n\nUser stuff below.\n',
+      '# My Project\n\nUser stuff above.\n\n<!-- coderigup:start -->\nold section\n<!-- coderigup:end -->\n\nUser stuff below.\n',
     );
     deploy(['node']);
     const content = readFileSync(join(target, 'AGENTS.md'), 'utf8');
@@ -387,7 +387,7 @@ describe('deployClaude — AGENTS.md / CLAUDE.md fan-out', () => {
     writeFileSync(join(target, 'AGENTS.md'), '# Plain user file\n\ncontent\n');
     deploy(['node']);
     const content = readFileSync(join(target, 'AGENTS.md'), 'utf8');
-    expect(content.indexOf('<!-- rigging:start -->')).toBeLessThan(
+    expect(content.indexOf('<!-- coderigup:start -->')).toBeLessThan(
       content.indexOf('# Plain user file'),
     );
     expect(content).toContain('# Plain user file');
@@ -425,7 +425,7 @@ describe('deployClaude — AGENTS.md / CLAUDE.md fan-out', () => {
     expect(stat.isSymbolicLink()).toBe(false);
     const content = readFileSync(join(target, 'CLAUDE.md'), 'utf8');
     expect(content).toContain('user content');
-    expect(content).toContain('<!-- rigging:start -->');
+    expect(content).toContain('<!-- coderigup:start -->');
     expect(content).toContain('# installed: 2026-04-30');
   });
 });
@@ -435,8 +435,8 @@ describe('uninstallClaude', () => {
   let target: string;
 
   beforeEach(() => {
-    source = mkdtempSync(join(tmpdir(), 'rigging-uc-src-'));
-    target = mkdtempSync(join(tmpdir(), 'rigging-uc-tgt-'));
+    source = mkdtempSync(join(tmpdir(), 'coderigup-uc-src-'));
+    target = mkdtempSync(join(tmpdir(), 'coderigup-uc-tgt-'));
     createFakeSource(source);
   });
 
@@ -495,15 +495,15 @@ describe('uninstallClaude', () => {
   it('preserves user-edited settings.json, removes only the sidecar', () => {
     install();
     // Simulate sidecar branch: user had pre-existing settings.json.
-    writeFileSync(join(target, '.claude/settings.rigging.json'), '{"v":1}');
+    writeFileSync(join(target, '.claude/settings.coderigup.json'), '{"v":1}');
     writeFileSync(join(target, '.claude/settings.json'), '{"user":"custom"}');
     uninstall();
     expect(existsSync(join(target, '.claude/settings.json'))).toBe(true);
     expect(readFileSync(join(target, '.claude/settings.json'), 'utf8')).toBe('{"user":"custom"}');
-    expect(existsSync(join(target, '.claude/settings.rigging.json'))).toBe(false);
+    expect(existsSync(join(target, '.claude/settings.coderigup.json'))).toBe(false);
   });
 
-  it('removes the rigging section from AGENTS.md, preserving user content', () => {
+  it('removes the coderigup section from AGENTS.md, preserving user content', () => {
     install();
     // Add user content above and below the marker section.
     const content = readFileSync(join(target, 'AGENTS.md'), 'utf8');
@@ -512,7 +512,7 @@ describe('uninstallClaude', () => {
     const after = readFileSync(join(target, 'AGENTS.md'), 'utf8');
     expect(after).toContain('# My Project');
     expect(after).toContain('# Footer');
-    expect(after).not.toContain('<!-- rigging:start -->');
+    expect(after).not.toContain('<!-- coderigup:start -->');
     expect(after).not.toContain('# installed: 2026-04-30');
   });
 
@@ -551,8 +551,8 @@ describe('uninstallKiro', () => {
   let target: string;
 
   beforeEach(() => {
-    source = mkdtempSync(join(tmpdir(), 'rigging-uk-src-'));
-    target = mkdtempSync(join(tmpdir(), 'rigging-uk-tgt-'));
+    source = mkdtempSync(join(tmpdir(), 'coderigup-uk-src-'));
+    target = mkdtempSync(join(tmpdir(), 'coderigup-uk-tgt-'));
     createFakeSource(source);
     deployKiro({
       sourceRoot: source,
@@ -617,8 +617,8 @@ describe('deployOpencode', () => {
   let target: string;
 
   beforeEach(() => {
-    source = mkdtempSync(join(tmpdir(), 'rigging-oc-src-'));
-    target = mkdtempSync(join(tmpdir(), 'rigging-oc-tgt-'));
+    source = mkdtempSync(join(tmpdir(), 'coderigup-oc-src-'));
+    target = mkdtempSync(join(tmpdir(), 'coderigup-oc-tgt-'));
     createFakeSource(source);
   });
 
@@ -634,7 +634,7 @@ describe('deployOpencode', () => {
       detectedLanguages,
       log: () => {},
       installedAt: '2026-04-30',
-      source: 'https://example.test/rigging',
+      source: 'https://example.test/coderigup',
     });
   }
 
@@ -704,7 +704,7 @@ describe('deployOpencode', () => {
     const content = readFileSync(path, 'utf8');
     expect(content).toContain('mode: subagent');
     expect(content).toContain('description: A test agent');
-    expect(content).toContain('managed-by: rigging');
+    expect(content).toContain('managed-by: coderigup');
     expect(content).not.toContain('tools:');
   });
 
@@ -737,8 +737,8 @@ describe('deployOpencode', () => {
     writeFileSync(join(target, 'opencode.json'), '{"user":"custom"}');
     deployO();
     expect(readFileSync(join(target, 'opencode.json'), 'utf8')).toBe('{"user":"custom"}');
-    expect(existsSync(join(target, 'opencode.rigging.json'))).toBe(true);
-    const sidecar = JSON.parse(readFileSync(join(target, 'opencode.rigging.json'), 'utf8'));
+    expect(existsSync(join(target, 'opencode.coderigup.json'))).toBe(true);
+    const sidecar = JSON.parse(readFileSync(join(target, 'opencode.coderigup.json'), 'utf8'));
     expect(sidecar.instructions).toEqual(['.opencode/rules/*.md']);
   });
 
@@ -747,8 +747,8 @@ describe('deployOpencode', () => {
     const agentsPath = join(target, 'AGENTS.md');
     expect(existsSync(agentsPath)).toBe(true);
     const content = readFileSync(agentsPath, 'utf8');
-    expect(content).toContain('<!-- rigging:opencode:start -->');
-    expect(content).toContain('<!-- rigging:opencode:end -->');
+    expect(content).toContain('<!-- coderigup:opencode:start -->');
+    expect(content).toContain('<!-- coderigup:opencode:end -->');
     expect(content).toContain('# installed: 2026-04-30');
     expect(content).toContain('.opencode/rules/lang-node.md');
   });
@@ -766,21 +766,21 @@ describe('deployOpencode', () => {
   });
 });
 
-describe('buildOpencodeRiggingSection', () => {
+describe('buildOpencodeCoderigupSection', () => {
   it('wraps content in opencode-specific markers', () => {
-    const section = buildOpencodeRiggingSection([], '2026-04-30', 'x');
-    expect(section.startsWith('<!-- rigging:opencode:start -->')).toBe(true);
-    expect(section.endsWith('<!-- rigging:opencode:end -->')).toBe(true);
+    const section = buildOpencodeCoderigupSection([], '2026-04-30', 'x');
+    expect(section.startsWith('<!-- coderigup:opencode:start -->')).toBe(true);
+    expect(section.endsWith('<!-- coderigup:opencode:end -->')).toBe(true);
   });
 
   it('references .opencode/rules/ paths (not .claude/rules/)', () => {
-    const section = buildOpencodeRiggingSection(['node'], '2026-04-30', 'x');
+    const section = buildOpencodeCoderigupSection(['node'], '2026-04-30', 'x');
     expect(section).toContain('.opencode/rules/lang-node.md');
     expect(section).not.toContain('.claude/rules/');
   });
 
   it('lists every skill with its description', () => {
-    const section = buildOpencodeRiggingSection([], '2026-04-30', 'x');
+    const section = buildOpencodeCoderigupSection([], '2026-04-30', 'x');
     for (const skill of [...SKILLS, ...VENDORED_SKILLS]) {
       expect(section).toContain(`**${skill.name}**`);
       expect(section).toContain(skill.description);
@@ -793,8 +793,8 @@ describe('deploy claude + opencode coexistence in AGENTS.md', () => {
   let target: string;
 
   beforeEach(() => {
-    source = mkdtempSync(join(tmpdir(), 'rigging-coexist-src-'));
-    target = mkdtempSync(join(tmpdir(), 'rigging-coexist-tgt-'));
+    source = mkdtempSync(join(tmpdir(), 'coderigup-coexist-src-'));
+    target = mkdtempSync(join(tmpdir(), 'coderigup-coexist-tgt-'));
     createFakeSource(source);
   });
 
@@ -810,7 +810,7 @@ describe('deploy claude + opencode coexistence in AGENTS.md', () => {
       detectedLanguages: ['node'] as Language[],
       log: () => {},
       installedAt: '2026-04-30',
-      source: 'https://example.test/rigging',
+      source: 'https://example.test/coderigup',
     };
     deployClaude(opts);
     deployOpencode(opts);
@@ -819,10 +819,10 @@ describe('deploy claude + opencode coexistence in AGENTS.md', () => {
   it('keeps both Claude and opencode marker sections side by side in AGENTS.md', () => {
     deployBoth();
     const content = readFileSync(join(target, 'AGENTS.md'), 'utf8');
-    expect(content).toContain('<!-- rigging:start -->');
-    expect(content).toContain('<!-- rigging:end -->');
-    expect(content).toContain('<!-- rigging:opencode:start -->');
-    expect(content).toContain('<!-- rigging:opencode:end -->');
+    expect(content).toContain('<!-- coderigup:start -->');
+    expect(content).toContain('<!-- coderigup:end -->');
+    expect(content).toContain('<!-- coderigup:opencode:start -->');
+    expect(content).toContain('<!-- coderigup:opencode:end -->');
     // Claude section references .claude/, opencode section references .opencode/.
     expect(content).toContain('@.claude/rules/lang-node.md');
     expect(content).toContain('.opencode/rules/lang-node.md');
@@ -832,10 +832,10 @@ describe('deploy claude + opencode coexistence in AGENTS.md', () => {
     deployBoth();
     uninstallOpencode({ targetRoot: target, log: () => {} });
     const content = readFileSync(join(target, 'AGENTS.md'), 'utf8');
-    expect(content).toContain('<!-- rigging:start -->');
-    expect(content).toContain('<!-- rigging:end -->');
-    expect(content).not.toContain('<!-- rigging:opencode:start -->');
-    expect(content).not.toContain('<!-- rigging:opencode:end -->');
+    expect(content).toContain('<!-- coderigup:start -->');
+    expect(content).toContain('<!-- coderigup:end -->');
+    expect(content).not.toContain('<!-- coderigup:opencode:start -->');
+    expect(content).not.toContain('<!-- coderigup:opencode:end -->');
     expect(existsSync(join(target, '.opencode'))).toBe(false);
     // Claude artifacts still present
     expect(existsSync(join(target, '.claude/rules', CORE_FILES[0]))).toBe(true);
@@ -845,10 +845,10 @@ describe('deploy claude + opencode coexistence in AGENTS.md', () => {
     deployBoth();
     uninstallClaude({ targetRoot: target, log: () => {} });
     const content = readFileSync(join(target, 'AGENTS.md'), 'utf8');
-    expect(content).not.toContain('<!-- rigging:start -->');
-    expect(content).not.toContain('<!-- rigging:end -->');
-    expect(content).toContain('<!-- rigging:opencode:start -->');
-    expect(content).toContain('<!-- rigging:opencode:end -->');
+    expect(content).not.toContain('<!-- coderigup:start -->');
+    expect(content).not.toContain('<!-- coderigup:end -->');
+    expect(content).toContain('<!-- coderigup:opencode:start -->');
+    expect(content).toContain('<!-- coderigup:opencode:end -->');
     expect(existsSync(join(target, '.opencode/rules', CORE_FILES[0]))).toBe(true);
   });
 });
@@ -858,8 +858,8 @@ describe('uninstallOpencode', () => {
   let target: string;
 
   beforeEach(() => {
-    source = mkdtempSync(join(tmpdir(), 'rigging-uoc-src-'));
-    target = mkdtempSync(join(tmpdir(), 'rigging-uoc-tgt-'));
+    source = mkdtempSync(join(tmpdir(), 'coderigup-uoc-src-'));
+    target = mkdtempSync(join(tmpdir(), 'coderigup-uoc-tgt-'));
     createFakeSource(source);
     deployOpencode({
       sourceRoot: source,
@@ -917,10 +917,10 @@ describe('uninstallOpencode', () => {
     expect(readFileSync(join(target, 'opencode.json'), 'utf8')).toBe('{"user":"custom"}');
   });
 
-  it('removes the sidecar opencode.rigging.json if present', () => {
-    writeFileSync(join(target, 'opencode.rigging.json'), '{"v":1}');
+  it('removes the sidecar opencode.coderigup.json if present', () => {
+    writeFileSync(join(target, 'opencode.coderigup.json'), '{"v":1}');
     uninstall();
-    expect(existsSync(join(target, 'opencode.rigging.json'))).toBe(false);
+    expect(existsSync(join(target, 'opencode.coderigup.json'))).toBe(false);
   });
 
   it('strips the opencode section from AGENTS.md but preserves user content', () => {
@@ -931,7 +931,7 @@ describe('uninstallOpencode', () => {
     const after = readFileSync(join(target, 'AGENTS.md'), 'utf8');
     expect(after).toContain('# My Project');
     expect(after).toContain('# Footer');
-    expect(after).not.toContain('<!-- rigging:opencode:start -->');
+    expect(after).not.toContain('<!-- coderigup:opencode:start -->');
   });
 
   it('preserves user-created skills under .opencode/skills/', () => {

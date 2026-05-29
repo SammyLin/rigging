@@ -6,7 +6,7 @@ Created: 2026-04-30
 
 ## Background
 
-rigging currently ships via `curl | bash` running `setup.sh` (717 lines). Three upgrades are on the table:
+coderigup currently ships via `curl | bash` running `setup.sh` (717 lines). Three upgrades are on the table:
 
 1. Make `AGENTS.md` the primary entry point (gains coverage of Codex / Cursor / Windsurf / Amp / Devin and other open-standard tools).
 2. Add a PRP template to the Plan step (borrowed from Cole Medin's context-engineering work).
@@ -16,7 +16,7 @@ Patching all three into `setup.sh` means editing bash three times and then throw
 
 ## Goals
 
-- **Distribution**: `npx rigging init` — zero install, instant trial.
+- **Distribution**: `npx coderigup init` — zero install, instant trial.
 - **Entry points**: emit `AGENTS.md`, `CLAUDE.md`, and `.kiro/steering/` from the same source of truth.
 - **Methodology**: PRP template baked into the Plan step.
 - **Compatibility**: `setup.sh` keeps working; v2 is developed in parallel until cutover.
@@ -35,7 +35,7 @@ Patching all three into `setup.sh` means editing bash three times and then throw
 - **Why not Python (uv)**: Aligning with Spec Kit is appealing, but `uv` is not yet universal. Spec Kit chose Python because GitHub leans Python — that's not a reason for us to copy.
 - **Why Node + TypeScript**:
     - Every Claude Code user already has `node` (Claude Code itself is built on Node).
-    - `npx rigging init` works with **zero install** — a huge adoption multiplier.
+    - `npx coderigup init` works with **zero install** — a huge adoption multiplier.
     - Aligns with our own `rules/lang-node.md` (pnpm-first).
     - `npm publish` is the most well-trodden release path in this ecosystem.
 
@@ -73,7 +73,7 @@ P1 follow-ups (DONE in same slice as P0):
 
 P2 follow-ups (still open, lower priority):
 - Support the fourth inclusion mode `auto` (description-driven loading) for steering files.
-- Move `managed-by: rigging` out of YAML frontmatter (non-standard key) into an HTML comment in the markdown body.
+- Move `managed-by: coderigup` out of YAML frontmatter (non-standard key) into an HTML comment in the markdown body.
 
 ### D5: v2 ships in parallel — `setup.sh` is not deleted up front
 
@@ -86,22 +86,22 @@ P2 follow-ups (still open, lower priority):
 
 ```bash
 # Default install (auto-detects languages)
-npx rigging init
+npx coderigup init
 
 # Explicit languages
-npx rigging init --lang node,python
+npx coderigup init --lang node,python
 
 # Show what would be written, change nothing
-npx rigging init --dry-run
+npx coderigup init --dry-run
 
 # Upgrade an existing install
-npx rigging upgrade
+npx coderigup upgrade
 
 # Upgrade rules only — preserve user-edited settings.json
-npx rigging upgrade --rules-only
+npx coderigup upgrade --rules-only
 
 # Remove
-npx rigging uninstall
+npx coderigup uninstall
 ```
 
 ## Repo Layout (post-cutover)
@@ -158,15 +158,15 @@ Referenced from `rules/ai-behavior.md` step 2: any task touching > 3 files must 
 |-------|--------|-----------------|
 | A | Write design doc (this one) | normal |
 | B | `cli/` development complete — feature parity with setup.sh, plus AGENTS.md and PRP | normal |
-| C | README primarily promotes `npx rigging init`; setup.sh shows a deprecation banner | deprecated |
+| C | README primarily promotes `npx coderigup init`; setup.sh shows a deprecation banner | deprecated |
 | D | One release later: `setup.sh` moves to `legacy/`, README removes the curl-bash section | legacy |
 | E | One release later: `legacy/setup.sh` is deleted | removed |
 
 ## Open Questions
 
 1. **CLAUDE.md sync on Windows**: symlink fallback — dual-write, or refuse to install on Windows? Decide based on user share.
-2. **CLI self-update**: provide `npx rigging self-update`, or rely on `npx rigging@latest`? The latter is simpler and probably enough.
-3. **Version pinning**: write a `.rigging-version` file into the target project's `.claude/` for upgrade diffs? Leaning yes.
+2. **CLI self-update**: provide `npx coderigup self-update`, or rely on `npx coderigup@latest`? The latter is simpler and probably enough.
+3. **Version pinning**: write a `.coderigup-version` file into the target project's `.claude/` for upgrade diffs? Leaning yes.
 4. **PRP enforcement**: hard-required for > 3 files, or always recommended? Leaning > 3 files (matches the existing `ai-behavior.md` rule).
 5. **Skill distribution**: should v2 also ship in Claude Code plugin format? Leaning no — defer to v3. Land the CLI + AGENTS.md story first.
 
@@ -174,7 +174,7 @@ Referenced from `rules/ai-behavior.md` step 2: any task touching > 3 files must 
 
 All must be true before v2 cutover:
 
-- [ ] `npx rigging init` produces a working install on clean Node, Python, and Go projects (verified by exercising the rules / agent inside both Claude Code and Kiro CLI).
+- [ ] `npx coderigup init` produces a working install on clean Node, Python, and Go projects (verified by exercising the rules / agent inside both Claude Code and Kiro CLI).
 - [ ] `.kiro/steering/` output is **valid per Kiro docs** — `fileMatchPattern` is an array, frontmatter uses official inclusion modes only. Note: this drops the original "byte-for-byte identical to setup.sh" criterion (see D6 — setup.sh has Kiro bugs we deliberately don't preserve).
 - [ ] `.kiro/agents/code-reviewer.json` uses official Kiro tool names (`read`, `shell`) and the agent loads in `kiro-cli chat --agent code-reviewer`.
 - [ ] AGENTS.md ↔ CLAUDE.md content stays in sync (symlink on Unix, dual-write merge on Windows / when CLAUDE.md pre-exists).
