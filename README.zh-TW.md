@@ -119,8 +119,6 @@ Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
 
 ## opencode 的差別
 
-> ⚠️ **實驗階段 — 還沒用 opencode 本體驗證過。** 安裝器產出的檔案是照 opencode 官方文件寫的格式（`mode: subagent`、`instructions` glob、command frontmatter），轉換邏輯也有單元測試覆蓋，但**沒有人**真的開過 opencode 跑過裝好的專案，確認它能不抱怨地吃完所有東西。試了之後麻煩[開 issue](https://github.com/SammyLin/coderigup/issues) 回報哪些有效、哪些壞掉。
-
 opencode 只會自動載入 `AGENTS.md` 跟在 `opencode.json` `instructions` 欄位列出的檔案，對應表：
 
 | Claude Code | opencode | 狀態 |

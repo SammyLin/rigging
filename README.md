@@ -119,8 +119,6 @@ Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 
 ## opencode differences
 
-> ⚠️ **Experimental — not yet validated against opencode itself.** The installer writes files matching opencode's documented format (`mode: subagent`, `instructions` glob, command frontmatter), and the converter logic is covered by unit tests, but no one has launched opencode against an installed project to confirm it actually parses everything without complaint. If you try it, please [open an issue](https://github.com/SammyLin/coderigup/issues) with what worked / broke.
-
 opencode auto-loads `AGENTS.md` and explicitly-listed instruction files only. Mapping:
 
 | Claude Code | opencode | Status |
