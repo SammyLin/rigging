@@ -231,7 +231,7 @@ Kiro CLI（AWS，從 Amazon Q CLI 升級而來）跟 Claude Code 的對應不是
 
 ---
 
-## 7. 對我們 rigging repo 的決策依據
+## 7. 對我們 coderigup repo 的決策依據
 
 基於以上觀察，我們的團隊標準要裝什麼：
 

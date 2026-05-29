@@ -98,7 +98,7 @@ export function makeKiroSteering(sourceContent: string, pattern?: string | strin
   } else {
     header.push('inclusion: always');
   }
-  header.push('managed-by: rigging');
+  header.push('managed-by: coderigup');
   header.push('---');
   return header.join('\n') + '\n' + stripFrontmatter(sourceContent);
 }

@@ -17,7 +17,7 @@ When a team starts a new project, every member's AI-agent setup differs, leading
 - `.env` accidentally pulled into context
 - Commit messages all over the place
 
-This repo codifies the team's best practices. Install with **`coderigup`** — a small CLI that rigs your project with the standards (the bare name `rigging` was taken on npm):
+This repo codifies the team's best practices. Install with **`coderigup`** — a small CLI that rigs your project with the standards:
 
 ```bash
 npx coderigup init
@@ -87,7 +87,7 @@ npx coderigup init --target opencode
 # All three
 npx coderigup init --target all
 
-# Refresh after a new rigging release
+# Refresh after a new coderigup release
 npx coderigup upgrade --target all
 
 # Remove (preserves user-edited files)
@@ -119,7 +119,7 @@ Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 
 ## opencode differences
 
-> ⚠️ **Experimental — not yet validated against opencode itself.** The installer writes files matching opencode's documented format (`mode: subagent`, `instructions` glob, command frontmatter), and the converter logic is covered by unit tests, but no one has launched opencode against an installed project to confirm it actually parses everything without complaint. If you try it, please [open an issue](https://github.com/SammyLin/rigging/issues) with what worked / broke.
+> ⚠️ **Experimental — not yet validated against opencode itself.** The installer writes files matching opencode's documented format (`mode: subagent`, `instructions` glob, command frontmatter), and the converter logic is covered by unit tests, but no one has launched opencode against an installed project to confirm it actually parses everything without complaint. If you try it, please [open an issue](https://github.com/SammyLin/coderigup/issues) with what worked / broke.
 
 opencode auto-loads `AGENTS.md` and explicitly-listed instruction files only. Mapping:
 
@@ -130,9 +130,9 @@ opencode auto-loads `AGENTS.md` and explicitly-listed instruction files only. Ma
 | Agents (markdown frontmatter) | Agents (`.opencode/agents/<name>.md`, frontmatter rewritten with `mode: subagent`) | ✅ format auto-converted |
 | Commands (`/commit`) | Commands (`.opencode/commands/<name>.md`) | ✅ installed; `allowed-tools` / `argument-hint` dropped |
 | Hooks | — | ❌ opencode has no event-hook system |
-| `settings.json` | `opencode.json` (only the `instructions` glob is written; user owns everything else) | ✅ sidecar fallback at `opencode.rigging.json` if the user already has one |
+| `settings.json` | `opencode.json` (only the `instructions` glob is written; user owns everything else) | ✅ sidecar fallback at `opencode.coderigup.json` if the user already has one |
 
-**A note on `--target all` + AGENTS.md:** opencode and Claude Code both read `AGENTS.md` at the project root. To avoid clobbering, each target writes its own marker-wrapped section (`<!-- rigging:start -->` for Claude, `<!-- rigging:opencode:start -->` for opencode), and they coexist in the same file.
+**A note on `--target all` + AGENTS.md:** opencode and Claude Code both read `AGENTS.md` at the project root. To avoid clobbering, each target writes its own marker-wrapped section (`<!-- coderigup:start -->` for Claude, `<!-- coderigup:opencode:start -->` for opencode), and they coexist in the same file.
 
 ## Standard Contents
 

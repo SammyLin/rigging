@@ -1,4 +1,4 @@
-// Copy (or clean) rigging source dirs into cli/ for npm pack.
+// Copy (or clean) coderigup source dirs into cli/ for npm pack.
 // The published package needs rules/, skills/, agents/, commands/, hooks/,
 // and settings.json bundled alongside dist/ so resolveSourceRoot() can find
 // them at runtime. In dev these live at the repo root (one level above cli/);

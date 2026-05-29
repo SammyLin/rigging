@@ -8,7 +8,7 @@ describe('makeSkill', () => {
       '---\n' +
         'name: security-check\n' +
         'description: "10-item security checklist"\n' +
-        'managed-by: rigging\n' +
+        'managed-by: coderigup\n' +
         '---\n' +
         '\n' +
         '# Security\nbody\n',
@@ -20,7 +20,7 @@ describe('makeSkill', () => {
     expect(makeSkill('x', 'y', source)).toContain(source);
   });
 
-  it('always includes managed-by: rigging', () => {
-    expect(makeSkill('a', 'b', 'c')).toContain('managed-by: rigging');
+  it('always includes managed-by: coderigup', () => {
+    expect(makeSkill('a', 'b', 'c')).toContain('managed-by: coderigup');
   });
 });

@@ -13,7 +13,7 @@ export function parseTarget(raw: string | undefined): Target | undefined {
   return (TARGETS as readonly string[]).includes(raw) ? (raw as Target) : undefined;
 }
 
-// Locate rigging's source files (rules/, skills/, etc.).
+// Locate coderigup's source files (rules/, skills/, etc.).
 //   - dev (tsx src/...)        : src/cli-shared.ts → up 2 → repo root (rules/ siblings cli/)
 //   - built local (node dist/) : dist/cli-shared.js → up 2 → repo root (same as dev)
 //   - published npm package    : dist/cli-shared.js → up 1 → package root, where the

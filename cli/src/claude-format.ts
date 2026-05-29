@@ -7,7 +7,7 @@ export function makeSkill(name: string, description: string, sourceContent: stri
     `---\n` +
     `name: ${name}\n` +
     `description: "${description}"\n` +
-    `managed-by: rigging\n` +
+    `managed-by: coderigup\n` +
     `---\n` +
     `\n` +
     sourceContent

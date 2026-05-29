@@ -21,7 +21,7 @@ export function makeOpencodeAgent(sourceContent: string): string {
 
   const header = ['---', `description: ${description}`, 'mode: subagent'];
   if (model) header.push(`model: ${model}`);
-  header.push('managed-by: rigging');
+  header.push('managed-by: coderigup');
   header.push('---');
   return header.join('\n') + '\n' + body;
 }
@@ -34,7 +34,7 @@ export function makeOpencodeAgent(sourceContent: string): string {
 export function makeOpencodeCommand(sourceContent: string): string {
   const { description = '' } = parseFrontmatter(sourceContent);
   const body = stripFrontmatter(sourceContent);
-  return `---\n` + `description: ${description}\n` + `managed-by: rigging\n` + `---\n` + body;
+  return `---\n` + `description: ${description}\n` + `managed-by: coderigup\n` + `---\n` + body;
 }
 
 // Build the opencode.json contents that wire up `.opencode/rules/*.md` as

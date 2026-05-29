@@ -26,7 +26,7 @@ describe('makeOpencodeAgent', () => {
     const out = makeOpencodeAgent(baseSource);
     expect(out).toContain('description: Reviews code changes');
     expect(out).toContain('mode: subagent');
-    expect(out).toContain('managed-by: rigging');
+    expect(out).toContain('managed-by: coderigup');
   });
 
   it('forwards the source model when present', () => {
@@ -71,8 +71,8 @@ describe('makeOpencodeCommand', () => {
     expect(out).not.toContain('argument-hint:');
   });
 
-  it('marks the file as managed-by: rigging', () => {
-    expect(makeOpencodeCommand(baseSource)).toContain('managed-by: rigging');
+  it('marks the file as managed-by: coderigup', () => {
+    expect(makeOpencodeCommand(baseSource)).toContain('managed-by: coderigup');
   });
 
   it('preserves the body (template) verbatim, including $ARGUMENTS placeholder', () => {

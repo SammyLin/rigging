@@ -1,7 +1,7 @@
 ---
 name: code-review-expert
 description: "Expert code review of current git changes with a senior engineer lens. Detects SOLID violations, security risks, and proposes actionable improvements."
-managed-by: rigging
+managed-by: coderigup
 ---
 
 # Code Review Expert
