@@ -2,7 +2,7 @@
 
 > [English](README.md)
 
-**團隊起新系統時的 AI 編碼標準**，使用 progressive disclosure 安裝到 Claude Code 或 Kiro CLI — 該載的才載，該觸發的才觸發。
+**團隊起新系統時的 AI 編碼標準**，使用 progressive disclosure 安裝到 Claude Code、Kiro CLI 或 opencode — 該載的才載，該觸發的才觸發。
 
 **Core Philosophy:** One feature at a time. Verify before moving on. No overengineering.
 
@@ -62,15 +62,15 @@ CLAUDE.md                     ← 主檔（短，用 @import 引入規則）
 
 ### 5 步驟 flow 如何被工具支撐
 
-| 步驟 | Claude Code | Kiro CLI |
-|------|-------------|----------|
-| 1. Research | 內建 Explore subagent | 主對話 |
-| 2. Plan | 內建 Plan subagent | 主對話 |
-| 3. Implement | 主對話 + `auto-format` hook 自動整理 | 主對話 |
-| 4. **Verify** | `/review` → `code-reviewer` subagent 獨立審查 | `kiro-cli chat --agent code-reviewer "review current changes"` |
-| 5. **Commit** | `/commit` → lint + test + 規範化 message | 手動跑 lint/test 後自行 commit（Kiro 無 slash command） |
+| 步驟 | Claude Code | Kiro CLI | opencode |
+|------|-------------|----------|----------|
+| 1. Research | 內建 Explore subagent | 主對話 | 內建 `explore` subagent |
+| 2. Plan | 內建 Plan subagent | 主對話 | 主對話 |
+| 3. Implement | 主對話 + `auto-format` hook 自動整理 | 主對話 | 主對話（無 hooks） |
+| 4. **Verify** | `/review` → `code-reviewer` subagent 獨立審查 | `kiro-cli chat --agent code-reviewer "review current changes"` | `/review` 或 `@code-reviewer` |
+| 5. **Commit** | `/commit` → lint + test + 規範化 message | 手動跑 lint/test 後自行 commit（Kiro 無 slash command） | `/commit` → lint + test + 規範化 message |
 
-**為什麼有差：** Kiro CLI 不支援使用者自訂 slash command 或 auto-format hook。但 `code-reviewer` agent 本身會裝到 `.kiro/agents/code-reviewer.json`，所以結構化審查的價值還在 —— 只是呼叫方式不同。
+**為什麼有差：** Kiro CLI 不支援使用者自訂 slash command 或 auto-format hook；opencode 支援 subagent 與 slash command 但沒有 event-hook 系統，所以 `auto-format` 跟 `secret-guard` 不會裝。`code-reviewer` agent 三邊都會裝，只是呼叫方式不同。
 
 ## 安裝
 
@@ -81,7 +81,10 @@ npx coderigup init
 # Kiro CLI
 npx coderigup init --target kiro
 
-# 兩個都裝
+# opencode
+npx coderigup init --target opencode
+
+# 三個都裝
 npx coderigup init --target all
 
 # rigging 釋出新版後刷新
@@ -113,6 +116,23 @@ Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
 | Commands（`/commit`） | — | ❌ Kiro CLI 無對應功能 |
 | Hooks | Hooks（event 名不同） | ❌ 模型差太多，不硬裝 |
 | `settings.json`（專案） | 機器層級設定 | ❌ 不是專案共享 |
+
+## opencode 的差別
+
+> ⚠️ **實驗階段 — 還沒用 opencode 本體驗證過。** 安裝器產出的檔案是照 opencode 官方文件寫的格式（`mode: subagent`、`instructions` glob、command frontmatter），轉換邏輯也有單元測試覆蓋，但**沒有人**真的開過 opencode 跑過裝好的專案，確認它能不抱怨地吃完所有東西。試了之後麻煩[開 issue](https://github.com/SammyLin/rigging/issues) 回報哪些有效、哪些壞掉。
+
+opencode 只會自動載入 `AGENTS.md` 跟在 `opencode.json` `instructions` 欄位列出的檔案，對應表：
+
+| Claude Code | opencode | 狀態 |
+|------------|----------|------|
+| Rules（`paths:`） | `.opencode/rules/*.md`，由 `opencode.json` `instructions` glob 串起來 | ✅ 永遠載入（opencode 沒有 path-gating） |
+| Skills | Skills（`.opencode/skills/<name>/SKILL.md`） | ✅ 跟 Claude 同樣的 frontmatter，原樣裝 |
+| Agents（markdown frontmatter） | Agents（`.opencode/agents/<name>.md`，frontmatter 改成 `mode: subagent`） | ✅ 自動轉換格式 |
+| Commands（`/commit`） | Commands（`.opencode/commands/<name>.md`） | ✅ 會裝；`allowed-tools` / `argument-hint` 會被丟掉 |
+| Hooks | — | ❌ opencode 沒有 event-hook 系統 |
+| `settings.json` | `opencode.json`（只寫 `instructions` 欄位，其他都讓使用者自己管） | ✅ 使用者已有 `opencode.json` 時改寫到 sidecar `opencode.rigging.json` |
+
+**`--target all` + AGENTS.md 注意事項：** opencode 與 Claude Code 都會讀專案根目錄的 `AGENTS.md`。為了不互相覆蓋，每個 target 寫自己的 marker 區段（Claude 用 `<!-- rigging:start -->`、opencode 用 `<!-- rigging:opencode:start -->`），兩段在同一個檔案裡並存。
 
 ## 標準內容
 

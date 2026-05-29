@@ -2,7 +2,7 @@
 
 > [繁體中文](README.zh-TW.md)
 
-**Team AI-coding standards for bootstrapping new projects**, installed into Claude Code or Kiro CLI with progressive disclosure — only what's needed, only when it's needed.
+**Team AI-coding standards for bootstrapping new projects**, installed into Claude Code, Kiro CLI, or opencode with progressive disclosure — only what's needed, only when it's needed.
 
 **Core Philosophy:** One feature at a time. Verify before moving on. No overengineering.
 
@@ -62,15 +62,15 @@ CLAUDE.md                     ← main file (short, @imports rules)
 
 ### How the 5-step flow is supported by tooling
 
-| Step | Claude Code | Kiro CLI |
-|------|-------------|----------|
-| 1. Research | Built-in Explore subagent | Main chat session |
-| 2. Plan | Built-in Plan subagent | Main chat session |
-| 3. Implement | Main conversation + `auto-format` hook | Main chat session |
-| 4. **Verify** | `/review` → `code-reviewer` subagent | `kiro-cli chat --agent code-reviewer "review current changes"` |
-| 5. **Commit** | `/commit` → lint + test + conventional message | Run lint/test manually, then commit (Kiro has no slash command) |
+| Step | Claude Code | Kiro CLI | opencode |
+|------|-------------|----------|----------|
+| 1. Research | Built-in Explore subagent | Main chat session | Built-in `explore` subagent |
+| 2. Plan | Built-in Plan subagent | Main chat session | Main chat session |
+| 3. Implement | Main conversation + `auto-format` hook | Main chat session | Main conversation (no hooks) |
+| 4. **Verify** | `/review` → `code-reviewer` subagent | `kiro-cli chat --agent code-reviewer "review current changes"` | `/review` or `@code-reviewer` |
+| 5. **Commit** | `/commit` → lint + test + conventional message | Run lint/test manually, then commit (Kiro has no slash command) | `/commit` → lint + test + conventional message |
 
-**Why the difference:** Kiro CLI does not support user-defined slash commands or auto-format hooks. The `code-reviewer` agent does get installed to `.kiro/agents/code-reviewer.json`, so you still get the structured-review benefit — you just invoke it differently.
+**Why the differences:** Kiro CLI does not support user-defined slash commands or auto-format hooks. opencode supports custom subagents and slash commands but has no event-hook system, so `auto-format` and `secret-guard` are not installed there. In both cases the `code-reviewer` agent ships — just invoke it differently.
 
 ## Install
 
@@ -81,7 +81,10 @@ npx coderigup init
 # Kiro CLI
 npx coderigup init --target kiro
 
-# Both
+# opencode
+npx coderigup init --target opencode
+
+# All three
 npx coderigup init --target all
 
 # Refresh after a new rigging release
@@ -113,6 +116,23 @@ Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 | Commands (`/commit`) | — | ❌ Kiro CLI has no equivalent |
 | Hooks | Hooks (different events) | ❌ model too different — not installed |
 | `settings.json` (project-level) | Machine-level settings | ❌ not a project-shared concern |
+
+## opencode differences
+
+> ⚠️ **Experimental — not yet validated against opencode itself.** The installer writes files matching opencode's documented format (`mode: subagent`, `instructions` glob, command frontmatter), and the converter logic is covered by unit tests, but no one has launched opencode against an installed project to confirm it actually parses everything without complaint. If you try it, please [open an issue](https://github.com/SammyLin/rigging/issues) with what worked / broke.
+
+opencode auto-loads `AGENTS.md` and explicitly-listed instruction files only. Mapping:
+
+| Claude Code | opencode | Status |
+|-------------|----------|--------|
+| Rules (`paths:`) | `.opencode/rules/*.md` wired via `opencode.json` `instructions` glob | ✅ installed always-on (opencode has no path-gating) |
+| Skills | Skills (`.opencode/skills/<name>/SKILL.md`) | ✅ Claude-compatible frontmatter — installed verbatim |
+| Agents (markdown frontmatter) | Agents (`.opencode/agents/<name>.md`, frontmatter rewritten with `mode: subagent`) | ✅ format auto-converted |
+| Commands (`/commit`) | Commands (`.opencode/commands/<name>.md`) | ✅ installed; `allowed-tools` / `argument-hint` dropped |
+| Hooks | — | ❌ opencode has no event-hook system |
+| `settings.json` | `opencode.json` (only the `instructions` glob is written; user owns everything else) | ✅ sidecar fallback at `opencode.rigging.json` if the user already has one |
+
+**A note on `--target all` + AGENTS.md:** opencode and Claude Code both read `AGENTS.md` at the project root. To avoid clobbering, each target writes its own marker-wrapped section (`<!-- rigging:start -->` for Claude, `<!-- rigging:opencode:start -->` for opencode), and they coexist in the same file.
 
 ## Standard Contents
 

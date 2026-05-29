@@ -1,6 +1,10 @@
 # Local agent state — not part of this repo's source
 .claude/
 .kiro/
+.opencode/
+AGENTS.md
+opencode.json
+opencode.rigging.json
 
 # Local backups
 *.local-backup

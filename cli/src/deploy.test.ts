@@ -13,11 +13,14 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  buildOpencodeRiggingSection,
   buildRiggingSection,
   deployClaude,
   deployKiro,
+  deployOpencode,
   uninstallClaude,
   uninstallKiro,
+  uninstallOpencode,
 } from './deploy.js';
 import type { Language } from './detect.js';
 import {
@@ -606,5 +609,335 @@ describe('uninstallKiro', () => {
     writeFileSync(join(target, '.kiro/skills/user-skill/SKILL.md'), 'user skill\n');
     uninstall();
     expect(existsSync(join(target, '.kiro/skills/user-skill/SKILL.md'))).toBe(true);
+  });
+});
+
+describe('deployOpencode', () => {
+  let source: string;
+  let target: string;
+
+  beforeEach(() => {
+    source = mkdtempSync(join(tmpdir(), 'rigging-oc-src-'));
+    target = mkdtempSync(join(tmpdir(), 'rigging-oc-tgt-'));
+    createFakeSource(source);
+  });
+
+  afterEach(() => {
+    rmSync(source, { recursive: true, force: true });
+    rmSync(target, { recursive: true, force: true });
+  });
+
+  function deployO(detectedLanguages: Language[] = []): void {
+    deployOpencode({
+      sourceRoot: source,
+      targetRoot: target,
+      detectedLanguages,
+      log: () => {},
+      installedAt: '2026-04-30',
+      source: 'https://example.test/rigging',
+    });
+  }
+
+  it('writes core rules to .opencode/rules/ with frontmatter stripped', () => {
+    // Inject paths: frontmatter into a fake rule to confirm it gets stripped.
+    writeFileSync(
+      join(source, 'rules', CORE_FILES[0]),
+      '---\npaths:\n  - "**/*.md"\n---\n# core\nbody\n',
+    );
+    deployO();
+    for (const file of CORE_FILES) {
+      const path = join(target, '.opencode/rules', file);
+      expect(existsSync(path)).toBe(true);
+    }
+    const content = readFileSync(join(target, '.opencode/rules', CORE_FILES[0]), 'utf8');
+    expect(content).not.toContain('paths:');
+    expect(content).toContain('# core');
+  });
+
+  it('writes detected lang rules with frontmatter stripped (no path gating)', () => {
+    writeFileSync(
+      join(source, 'rules/lang-node.md'),
+      '---\npaths:\n  - "**/*.ts"\n---\n# node\nbody\n',
+    );
+    deployO(['node']);
+    const path = join(target, '.opencode/rules/lang-node.md');
+    expect(existsSync(path)).toBe(true);
+    const content = readFileSync(path, 'utf8');
+    expect(content).not.toContain('paths:');
+    expect(content).not.toContain('"**/*.ts"');
+    expect(content).toContain('# node');
+    // Other langs not installed
+    expect(existsSync(join(target, '.opencode/rules/lang-go.md'))).toBe(false);
+  });
+
+  it('falls back to all language rules when none are detected', () => {
+    deployO([]);
+    for (const lang of LANG_MANIFEST) {
+      expect(existsSync(join(target, '.opencode/rules', lang.file))).toBe(true);
+    }
+  });
+
+  it('writes skills to .opencode/skills/<name>/SKILL.md', () => {
+    deployO();
+    for (const skill of SKILLS) {
+      const path = join(target, '.opencode/skills', skill.name, 'SKILL.md');
+      expect(existsSync(path)).toBe(true);
+      const content = readFileSync(path, 'utf8');
+      expect(content).toContain(`name: ${skill.name}`);
+      expect(content).toContain(`description: "${skill.description}"`);
+    }
+  });
+
+  it('copies vendored skill directories verbatim', () => {
+    deployO();
+    for (const skill of VENDORED_SKILLS) {
+      const skillDir = join(target, '.opencode/skills', skill.name);
+      expect(existsSync(join(skillDir, 'SKILL.md'))).toBe(true);
+      expect(existsSync(join(skillDir, 'references/checklist.md'))).toBe(true);
+    }
+  });
+
+  it('writes agents to .opencode/agents/ with mode: subagent and no tools: field', () => {
+    deployO();
+    const path = join(target, '.opencode/agents/code-reviewer.md');
+    expect(existsSync(path)).toBe(true);
+    const content = readFileSync(path, 'utf8');
+    expect(content).toContain('mode: subagent');
+    expect(content).toContain('description: A test agent');
+    expect(content).toContain('managed-by: rigging');
+    expect(content).not.toContain('tools:');
+  });
+
+  it('writes commands to .opencode/commands/ with Claude-specific frontmatter dropped', () => {
+    // Replace the fake command body with one carrying Claude-only frontmatter.
+    writeFileSync(
+      join(source, 'commands/commit.md'),
+      '---\ndescription: Commit\nargument-hint: [ctx]\nallowed-tools: Bash(git:*)\n---\nbody\n',
+    );
+    deployO();
+    const path = join(target, '.opencode/commands/commit.md');
+    expect(existsSync(path)).toBe(true);
+    const content = readFileSync(path, 'utf8');
+    expect(content).toContain('description: Commit');
+    expect(content).not.toContain('argument-hint:');
+    expect(content).not.toContain('allowed-tools:');
+    expect(content).toContain('body');
+  });
+
+  it('writes opencode.json on a fresh install', () => {
+    deployO();
+    const path = join(target, 'opencode.json');
+    expect(existsSync(path)).toBe(true);
+    const cfg = JSON.parse(readFileSync(path, 'utf8'));
+    expect(cfg.$schema).toBe('https://opencode.ai/config.json');
+    expect(cfg.instructions).toEqual(['.opencode/rules/*.md']);
+  });
+
+  it('writes a sidecar when opencode.json already exists and differs', () => {
+    writeFileSync(join(target, 'opencode.json'), '{"user":"custom"}');
+    deployO();
+    expect(readFileSync(join(target, 'opencode.json'), 'utf8')).toBe('{"user":"custom"}');
+    expect(existsSync(join(target, 'opencode.rigging.json'))).toBe(true);
+    const sidecar = JSON.parse(readFileSync(join(target, 'opencode.rigging.json'), 'utf8'));
+    expect(sidecar.instructions).toEqual(['.opencode/rules/*.md']);
+  });
+
+  it('writes AGENTS.md with the opencode-specific marker section', () => {
+    deployO(['node']);
+    const agentsPath = join(target, 'AGENTS.md');
+    expect(existsSync(agentsPath)).toBe(true);
+    const content = readFileSync(agentsPath, 'utf8');
+    expect(content).toContain('<!-- rigging:opencode:start -->');
+    expect(content).toContain('<!-- rigging:opencode:end -->');
+    expect(content).toContain('# installed: 2026-04-30');
+    expect(content).toContain('.opencode/rules/lang-node.md');
+  });
+
+  it('does not write any Claude-only or Kiro-only artifacts', () => {
+    deployO();
+    expect(existsSync(join(target, '.claude'))).toBe(false);
+    expect(existsSync(join(target, '.kiro'))).toBe(false);
+    expect(existsSync(join(target, 'CLAUDE.md'))).toBe(false);
+  });
+
+  it('does not install hooks (opencode has no event-hook system)', () => {
+    deployO();
+    expect(existsSync(join(target, '.opencode/hooks'))).toBe(false);
+  });
+});
+
+describe('buildOpencodeRiggingSection', () => {
+  it('wraps content in opencode-specific markers', () => {
+    const section = buildOpencodeRiggingSection([], '2026-04-30', 'x');
+    expect(section.startsWith('<!-- rigging:opencode:start -->')).toBe(true);
+    expect(section.endsWith('<!-- rigging:opencode:end -->')).toBe(true);
+  });
+
+  it('references .opencode/rules/ paths (not .claude/rules/)', () => {
+    const section = buildOpencodeRiggingSection(['node'], '2026-04-30', 'x');
+    expect(section).toContain('.opencode/rules/lang-node.md');
+    expect(section).not.toContain('.claude/rules/');
+  });
+
+  it('lists every skill with its description', () => {
+    const section = buildOpencodeRiggingSection([], '2026-04-30', 'x');
+    for (const skill of [...SKILLS, ...VENDORED_SKILLS]) {
+      expect(section).toContain(`**${skill.name}**`);
+      expect(section).toContain(skill.description);
+    }
+  });
+});
+
+describe('deploy claude + opencode coexistence in AGENTS.md', () => {
+  let source: string;
+  let target: string;
+
+  beforeEach(() => {
+    source = mkdtempSync(join(tmpdir(), 'rigging-coexist-src-'));
+    target = mkdtempSync(join(tmpdir(), 'rigging-coexist-tgt-'));
+    createFakeSource(source);
+  });
+
+  afterEach(() => {
+    rmSync(source, { recursive: true, force: true });
+    rmSync(target, { recursive: true, force: true });
+  });
+
+  function deployBoth(): void {
+    const opts = {
+      sourceRoot: source,
+      targetRoot: target,
+      detectedLanguages: ['node'] as Language[],
+      log: () => {},
+      installedAt: '2026-04-30',
+      source: 'https://example.test/rigging',
+    };
+    deployClaude(opts);
+    deployOpencode(opts);
+  }
+
+  it('keeps both Claude and opencode marker sections side by side in AGENTS.md', () => {
+    deployBoth();
+    const content = readFileSync(join(target, 'AGENTS.md'), 'utf8');
+    expect(content).toContain('<!-- rigging:start -->');
+    expect(content).toContain('<!-- rigging:end -->');
+    expect(content).toContain('<!-- rigging:opencode:start -->');
+    expect(content).toContain('<!-- rigging:opencode:end -->');
+    // Claude section references .claude/, opencode section references .opencode/.
+    expect(content).toContain('@.claude/rules/lang-node.md');
+    expect(content).toContain('.opencode/rules/lang-node.md');
+  });
+
+  it('uninstalling opencode leaves the Claude section intact', () => {
+    deployBoth();
+    uninstallOpencode({ targetRoot: target, log: () => {} });
+    const content = readFileSync(join(target, 'AGENTS.md'), 'utf8');
+    expect(content).toContain('<!-- rigging:start -->');
+    expect(content).toContain('<!-- rigging:end -->');
+    expect(content).not.toContain('<!-- rigging:opencode:start -->');
+    expect(content).not.toContain('<!-- rigging:opencode:end -->');
+    expect(existsSync(join(target, '.opencode'))).toBe(false);
+    // Claude artifacts still present
+    expect(existsSync(join(target, '.claude/rules', CORE_FILES[0]))).toBe(true);
+  });
+
+  it('uninstalling Claude leaves the opencode section intact', () => {
+    deployBoth();
+    uninstallClaude({ targetRoot: target, log: () => {} });
+    const content = readFileSync(join(target, 'AGENTS.md'), 'utf8');
+    expect(content).not.toContain('<!-- rigging:start -->');
+    expect(content).not.toContain('<!-- rigging:end -->');
+    expect(content).toContain('<!-- rigging:opencode:start -->');
+    expect(content).toContain('<!-- rigging:opencode:end -->');
+    expect(existsSync(join(target, '.opencode/rules', CORE_FILES[0]))).toBe(true);
+  });
+});
+
+describe('uninstallOpencode', () => {
+  let source: string;
+  let target: string;
+
+  beforeEach(() => {
+    source = mkdtempSync(join(tmpdir(), 'rigging-uoc-src-'));
+    target = mkdtempSync(join(tmpdir(), 'rigging-uoc-tgt-'));
+    createFakeSource(source);
+    deployOpencode({
+      sourceRoot: source,
+      targetRoot: target,
+      detectedLanguages: [],
+      log: () => {},
+      installedAt: '2026-04-30',
+      source: 'https://example.test',
+    });
+  });
+
+  afterEach(() => {
+    rmSync(source, { recursive: true, force: true });
+    rmSync(target, { recursive: true, force: true });
+  });
+
+  function uninstall(): void {
+    uninstallOpencode({ targetRoot: target, log: () => {} });
+  }
+
+  it('removes every file deployOpencode installed under .opencode/', () => {
+    uninstall();
+    for (const file of CORE_FILES) {
+      expect(existsSync(join(target, '.opencode/rules', file))).toBe(false);
+    }
+    for (const lang of LANG_MANIFEST) {
+      expect(existsSync(join(target, '.opencode/rules', lang.file))).toBe(false);
+    }
+    for (const skill of SKILLS) {
+      expect(existsSync(join(target, '.opencode/skills', skill.name, 'SKILL.md'))).toBe(false);
+    }
+    for (const skill of VENDORED_SKILLS) {
+      expect(existsSync(join(target, '.opencode/skills', skill.name))).toBe(false);
+    }
+    for (const f of AGENT_FILES) {
+      expect(existsSync(join(target, '.opencode/agents', f.split('/').pop()!))).toBe(false);
+    }
+    for (const f of COMMAND_FILES) {
+      expect(existsSync(join(target, '.opencode/commands', f.split('/').pop()!))).toBe(false);
+    }
+    // Whole .opencode/ tree should be gone (no user content was added).
+    expect(existsSync(join(target, '.opencode'))).toBe(false);
+  });
+
+  it('removes opencode.json when it was installed fresh by us', () => {
+    uninstall();
+    expect(existsSync(join(target, 'opencode.json'))).toBe(false);
+  });
+
+  it('preserves a user-edited opencode.json', () => {
+    // Replace our pristine opencode.json with user-modified content.
+    writeFileSync(join(target, 'opencode.json'), '{"user":"custom"}');
+    uninstall();
+    expect(existsSync(join(target, 'opencode.json'))).toBe(true);
+    expect(readFileSync(join(target, 'opencode.json'), 'utf8')).toBe('{"user":"custom"}');
+  });
+
+  it('removes the sidecar opencode.rigging.json if present', () => {
+    writeFileSync(join(target, 'opencode.rigging.json'), '{"v":1}');
+    uninstall();
+    expect(existsSync(join(target, 'opencode.rigging.json'))).toBe(false);
+  });
+
+  it('strips the opencode section from AGENTS.md but preserves user content', () => {
+    // Add user content above and below the marker section.
+    const content = readFileSync(join(target, 'AGENTS.md'), 'utf8');
+    writeFileSync(join(target, 'AGENTS.md'), `# My Project\n\n${content}\n\n# Footer\n`);
+    uninstall();
+    const after = readFileSync(join(target, 'AGENTS.md'), 'utf8');
+    expect(after).toContain('# My Project');
+    expect(after).toContain('# Footer');
+    expect(after).not.toContain('<!-- rigging:opencode:start -->');
+  });
+
+  it('preserves user-created skills under .opencode/skills/', () => {
+    mkdirSync(join(target, '.opencode/skills/user-skill'), { recursive: true });
+    writeFileSync(join(target, '.opencode/skills/user-skill/SKILL.md'), 'user skill\n');
+    uninstall();
+    expect(existsSync(join(target, '.opencode/skills/user-skill/SKILL.md'))).toBe(true);
   });
 });
